@@ -1,7 +1,6 @@
 #include "./headers/universe.h"
 #include "polynomial_fittings.c"
 
-int* B[256];
 extern char bits[];
 int points = 0;
 
@@ -32,7 +31,7 @@ double** create_domain_range(){
         binary+=1;
         if(binary%8 == 0 && binary > 0){
             int number = str_int(str);
-            x_ax[pos] = pos;
+            x_ax[pos] = number;
             y_ax[pos] = number;
             pos+=1;
             x_ax = realloc(x_ax, sizeof(double)*(pos+1));
@@ -44,6 +43,50 @@ double** create_domain_range(){
     axies[0] = x_ax;
     axies[1] = y_ax;
     points = pos;
+
+    return axies;
+}
+
+double** create_domain_range_corruption(){
+    int len = stream_len();
+    int pos = 0;
+    int binary = 0;
+    int changes = 0;
+    double** axies = malloc(sizeof(double*)*2);
+    double* x_ax = malloc(sizeof(double));
+    double* y_ax = malloc(sizeof(double));
+    char* str = malloc(8);
+
+
+    for(int i = 0; i < len; i++){
+        char tmp = bits[i];
+        int drop = rand();
+        
+        if(drop > 31084 && changes < 0){
+         if (tmp == '0'){
+             tmp = '1';
+         } else{
+             tmp = '0';
+         }  
+         str[binary] = tmp;
+         changes+=1;
+        }else{ 
+            str[binary] = tmp;
+        }
+        binary+=1;
+        if(binary%8 == 0 && binary > 0){
+            int number = str_int(str);
+            x_ax[pos] = number;
+            y_ax[pos] = number;
+            pos+=1;
+            x_ax = realloc(x_ax, sizeof(double)*(pos+1));
+            y_ax = realloc(y_ax, sizeof(double)*(pos+1));
+            binary = 0;
+        }
+
+    }
+    axies[0] = x_ax;
+    axies[1] = y_ax;
 
     return axies;
 }
@@ -71,31 +114,23 @@ void machine1(int k, double** axis){
 
     double polynomial[k];
 
-    polynomialfit(points, k, (double*)x, (double*)y, (double*)polynomial);
-    
-    for(int i=0; i < 15; i++){
-        printf("%f\n", polynomial[i]);
-    }
+    int polynomial_2[k];
+
     //polynomial eval
-    // f(x) = x^3 + x + 1
-    for (int i =0; i < getlen(message); i++){
-        int* entry = malloc(sizeof(int)*2);
-        int letter = message[i];
-        entry[0] = letter;
-        entry[1] = f(letter);
-    }   
-
-
-}
-
-void create_B(){
-    int total_chars = 256;
-    for(int i = 0; i < total_chars; i++){
-        int* entry = malloc(sizeof(int)*2);
-        entry[0] = i;
-        entry[1] = f(i);
-        B[i] = entry;
+    for (int i =0; i < points; i++){
+        y[i] = f(x[i]);
     }
+
+    polynomialfit(points, k, (double*)x, (double*)y, (double*)polynomial);
+
+    printf("Old Polynomial:\t");
+    for(int j = 0; j < k; j++){
+        polynomial_2[j] = (int)(polynomial[j])%prime;
+        printf("%dx^(%d) + \t", polynomial_2[j], k-j);
+    }
+    printf("\n");   
+
+
 }
 
 int getlen(char* mesg){
@@ -126,37 +161,54 @@ int pow_jack(int val, int amount){
     return ret_int;
 }
 
-void unlock(int** points){
-    int len = getlen2(points);
+void unlock(int** R, double** B, int k){
+    int len = getlen2(R);
     int mesg_pos = 0;
+    int pos =0;
+    double* x_axis = malloc(sizeof(int)*len);
+    double* y_axis = malloc(sizeof(int)*len);
+    double polynomial[k];
+    int polynomial_2[k];
     char* mesg = malloc(sizeof(len));
+
+
     for(int i = 0; i < len; i++){
-        int x_i = points[i][0];
-        int y_i = points[i][1];
-        if(is_proper_element(x_i, y_i) == 1){
-            mesg[mesg_pos] = x_i;
-            mesg_pos+=1;
+        double x_i = R[i][0];
+        double y_i = R[i][1];
+        mesg_pos = is_proper_element(x_i, y_i,len, B);
+        if(mesg_pos != -1){
+            x_axis[pos] = x_i;
+            y_axis[pos] = y_i;
+            pos+=1;
         }
     }
-    printf("%s", mesg);
+    polynomialfit(points, k, (double*)x_axis, (double*)y_axis, (double*)polynomial);
+
+    printf("New Polynomial:\t");
+    for(int j = 0; j < k; j++){
+        polynomial_2[j] = (int)polynomial[j];
+        printf("%dx^(%d) + \t", polynomial_2[j], k-j);
+    }
+    printf("\n");
 }
 
-int is_proper_element(int x, int y){
-    int len = getlen2(B);
-    int is_element = 0;
+int is_proper_element(double x, double y, int len, double** B){
+    int is_element = -1;
     for(int i = 0; i < len && is_element == 0; i++){
-        int val_b_x = B[i][0];
-        int val_b_y = B[i][1];
-        if(val_b_x == x && val_b_y == y){
-            is_element = 1;
+        double val_b_x = B[i][0];
+        double val_b_y = B[i][1];
+        if(val_b_x == x){
+            is_element = i;
         }
     }
     return is_element;
 }
 
 int main(){
+    printf("%d\n", stream_len());
     double** data_2 = create_domain_range();
-    machine1(15, data_2);
-    unlock((int**)data_2);
+    int* R = machine1(3, data_2);
+    double** B = create_domain_range_corruption();
+    unlock((int**)data_2, data_2,3);
     return 0;
 }
