@@ -1,18 +1,39 @@
 #include "./headers/reedSolo2.h"
 
 char* mesg = "Hello";
-long p = pow(2,16);
+long p = pow(2,8);
 int symbols = 256;
-unsigned int NW = 1 << 16;
+unsigned int NW = 1 << 8;
 unsigned int *gflog, *gfilog;
 extern char bits[];
-unsigned int prim_poly = (unsigned int) 0b10000001111011101;
-int generator = (unsigned int)0b1000011;
+unsigned int prim_poly = (unsigned int) 0b100011101;
+int generator = (unsigned int)0b10000011;
 //unsigned int prim_poly = 0b;
+
+int find_primitive_element(){
+    int num = 1;
+    int check = 1;
+    for(int i =1; i < NW; i++){
+        num = i;
+        for(int j = 1; j < NW; j++){
+            if(gf_pow(num, j) == 1){
+                check = 0;
+                break;
+            }
+        }
+        if(check) {
+            printf("%d IS A PRIMITIVE ELEMENT.\n",num);
+            sleep(1);
+        }
+        check = 1;
+    }
+    return num;
+}
 
 int* g(int t){
     int num = 0;
     int count = 0;
+    find_primitive_element();
 
     // for(int i = 1; i < NW; i++){
     //     count = 0;
@@ -36,19 +57,19 @@ int* g(int t){
     tmp_1[0] = generator;
     tmp_1[1] = 1;
     int size = 2;
-    for(int i = 1; i < 2*t; i++){
+    for(int i = 1; i < 2*t-1; i++){
         int* tmp_2 = malloc(sizeof(int)*2);
         tmp_2[0] = gf_pow(generator, i+1);
         tmp_2[1] = 1;
         int* holder = gf_mult_poly(tmp_1, tmp_2, size, 2);
-        size = 2+size+1;
+        size = 2+size-1;
         tmp_1 = realloc(tmp_1, size*sizeof(int));
         for(int j =0; j < size; j++){
             tmp_1[j] = holder[j];
         }
         free(tmp_2);
     }
-    printf("%d\n", size);
+    //printf("%d\n", size);
     return tmp_1;
 }
 
@@ -132,10 +153,14 @@ int* encode_message(int n, int k, int t){
     time_t dd;
     srand((unsigned) time(&dd));
 
-    //int* Q = gf_div_poly(M, g_x, n, n-k,0);
-    int* CK = gf_div_poly(M, g_x, n, n-k,1);
+    //printf("deg of g = %d\n", deg(g_x,n-k));
 
-    int* C = gf_poly_add(M,CK, n, n-k);
+    //print_arr(M, deg(M,n));
+
+    int* Q = gf_div_poly(M, g_x, n, deg(g_x,n-k)+1, 0);
+    int* CK = gf_div_poly(M, g_x, n, deg(g_x,n-k)+1, 1);
+
+    int* C = gf_poly_add(M,CK, n, deg(g_x,n-k)+1);
 
     //int* S_i_d = syndome_calculator_division(C, g_x, n, n-k);
 
@@ -145,9 +170,9 @@ int* encode_message(int n, int k, int t){
     for(int i = 0; i < n; i++){
         //5% chance of error
         //printf("%d\n", rand());
-        if(rand()%100 > 95){
-            unsigned int val = rand()%100;
-            C[i] = C[i] ^ val;
+        if(rand()%200 > 198){
+            unsigned int val = rand()%5;
+            C[i] = C[i] ^ 1;
             printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, val);
         }
     }
@@ -171,19 +196,19 @@ int* encode_message(int n, int k, int t){
     // // }
 
 
-    int* S = syndome_calculator_division(C,  g_x, n, n-k);
+    int* S = syndome_calculator_division(C,  g_x, n, deg(g_x,n-k)+1);
     
 
-    int* s_r = euclid_alg(S, t);
+    int* s = euclid_alg(S, t);
 
     //print_arr(s, 2*t);
 
-    if(s_r != 0){
+    if(s != 0){
         // // int* sig_d = gf_div_poly(sig, x_pow(6), 2*n, 7, 0);
         
-        //int* s_r = sigma_r(s, t);
+        int* s_r = sigma_r(s, t);
 
-        int* roots = roots_of_poly(s_r, 2*t, t, n);
+        int* roots = roots_of_poly(s_r, deg(s_r, 2*t)+1, t, n);
 
         //printf("Printing SXSig/S\n");
         //print_arr(s, 2*t);
@@ -193,7 +218,7 @@ int* encode_message(int n, int k, int t){
         print_arr(roots, n);
     }
 
-    return C;
+    return 0;
 }
 
 
@@ -201,7 +226,6 @@ int* sigma_r(int* s, int t){
     int pos = 0;
     int size = (deg(s,2*t)+1);
     int* sigma_r = malloc(sizeof(int)*size);
-    printf("SIZE of sigma_r=%d", size);
     for(int i =size-1; i >=0; i--){
         sigma_r[pos] = s[i];
         pos++;
@@ -212,17 +236,24 @@ int* sigma_r(int* s, int t){
 
 int* roots_of_poly(int* sigma_r, int len, int t, int n){
     int* zeros_ = malloc(sizeof(int)*n);
-    int zeros = 0;
+    int zeros = 1;
     unsigned int num = 0;
     zeros_[0] = 0;
 
-    for(int i=0; i < n; i++){
-        //num = (unsigned int) eval_poly(sigma_r, len, gf_pow(generator, i));
-        printf("%d\n", num);
+    for(int i=0; i < p; i++){
+        num = (unsigned int) eval_poly(sigma_r, len, i);
+        //eval_poly(sigma_r, len, gf_pow(generator, i));
+        //printf("%d\n", num);
         if(num == 0){
             zeros_[zeros] = i;
             zeros++;
             printf("ZERO AT %d\n", i);
+            for(int j =0; j < p; j++){
+                int num = gf_pow(generator, j);
+                if(num == i){
+                    printf("ALPHA RAISED TO %d IS the zero\n", j);
+                }
+            }
         }
         //printf("%d\n", zeros);
     }
@@ -239,7 +270,7 @@ int* roots_of_poly(int* sigma_r, int len, int t, int n){
     //     //printf("%d\n", zeros);
     // }
 
-    zeros_[0] = zeros;
+    zeros_[0] = zeros-1;
 
     return zeros_;
 }
@@ -249,8 +280,7 @@ int* create_S_poly(int* R, int t, int n){
     int* S = malloc(sizeof(int)*2*t);
 
     for(int i = 0; i < 2*t; i++){
-        S[i] = calculate_S(R, i, n);
-        
+        S[i] = (unsigned int) calculate_S(R, i, n);
     }
 
     print_arr(S, n);
@@ -380,8 +410,8 @@ int* euclid_alg(int* S, int t){
 
     int pos = 0;
 
-    print_arr(x_2t, 2*t+1);
-    print_arr(S, 2*t);
+    //print_arr(x_2t, 2*t+1);
+    //print_arr(S, 2*t);
 
     int degree = deg(S, 2*t);
     printf("DEGREE=%d\n", deg(S, 2*t));
@@ -393,13 +423,13 @@ int* euclid_alg(int* S, int t){
         euc = euclid_alg_rec(x_2t, S, t, 2*t+1, 2*t);
     }
 
-    int* y = euc[1];
+    int* y = euc[2];
     int* y_2 = malloc(sizeof(int)* (deg(y, 2*t)+1));
 
     printf("Printing SXSig degree of 0,1=%d,%d\n", deg(euc[0],2*t)+1, deg(euc[1],2*t)+1);
     int y_size = deg(euc[0],2*t)+deg(euc[1],2*t)+1;
     printf("Printing y y_size=%d\n", y_size);
-    print_arr(y, deg(y, 2*t)+1);
+    //print_arr(y, deg(y, 2*t)+1);
     for(int i =deg(y, 2*t); i >= 0; i--){
         
         y_2[pos] = y[i];
@@ -409,23 +439,26 @@ int* euclid_alg(int* S, int t){
     for(int i = pos; i < 2*t;i++){
         y_2[i] = 0;
     }
-    // int* q = gf_div_poly(y, S, y_size, deg(S, 2*t)+1, 0);
+    //print_arr(y, 2*t);
+    //int* q = gf_div_poly(y, S, deg(y, 2*t)+1, deg(S, 2*t)+1, 0);
     // int* r = gf_div_poly(y, S, y_size, deg(S, 2*t)+1, 1);
+    //print_arr(q, 2*t);
     
-    // int* sig = gf_poly_add(q,r, deg(q,2*t)+1, deg(r, 2*t)+1);
+    int* sum = gf_poly_add(euc[1],euc[0], deg(euc[1],2*t)+1, deg(euc[0], 2*t)+1);
+    int* q = gf_div_poly(sum, S, deg(sum, 2*t)+1, deg(S, 2*t)+1, 0);
     // printf("printing sigma.\n");
     // print_arr(sig, deg(sig, 2*t)+1);
 
 
-    return y_2;
+    return y;
 }
 
 int** euclid_alg_rec(int* a, int* b, int t, int a_len, int b_len){
     
-    printf("Printing Polnomial A\n");
-    print_arr(a, deg(a,a_len)+1); 
-    printf("Printing Polnomial B\n");
-    print_arr(b, deg(b,b_len)+1);
+    // printf("Printing Polnomial A\n");
+    // print_arr(a, deg(a,a_len)+1); 
+    // printf("Printing Polnomial B\n");
+    // print_arr(b, deg(b,b_len)+1);
     int degree = 0;
 
     if(a_len > 1){
@@ -448,7 +481,7 @@ int** euclid_alg_rec(int* a, int* b, int t, int a_len, int b_len){
         }
         zero[0] = a[0];
         ret_val[0] = b;
-        ret_val[1] = zero;
+        ret_val[1] = a;
         ret_val[2] = b2;
         return ret_val;
     }else{
@@ -457,34 +490,34 @@ int** euclid_alg_rec(int* a, int* b, int t, int a_len, int b_len){
         
         
         int* a2 = gf_div_poly(a, b, deg(a,a_len)+1, deg(b,b_len)+1,1);
-        printf("Printing polynomial A2\n");
-        print_arr(a2, deg(a2, 2*t)+1);
-        printf("Printing polynomial B inside.\n");  
-        print_arr(b, deg(b, 2*t)+1);
-        int** tmp_holder = euclid_alg_rec(b, a2, t, deg(b, b_len)+1, deg(a2, a_len)+1);
+        // printf("Printing polynomial A2\n");
+        // print_arr(a2, deg(a2, a_len)+1);
+        // printf("Printing polynomial B inside.\n");  
+        // print_arr(b, deg(b, b_len)+1);
+        int** tmp_holder = euclid_alg_rec(b, a2, t, deg(b, b_len)+1, deg(a2, b_len)+1);
         
         int* gcd = tmp_holder[0];
         int* x1 = tmp_holder[1];
         int* y1 = tmp_holder[2];
 
-        printf("Printing X1 and X2\n");
-        int error_msg_x = print_arr(x1, deg(x1, 2*t)+1);
+        //printf("Printing X1 and X2\n");
+        int error_msg_x =  print_arr(x1, deg(x1, 2*t)+1);
         int error_msg_y = print_arr(y1, deg(y1, 2*t)+1);
 
 
         if(error_msg_x == 1 && error_msg_y == 1){
-            print_arr(a, deg(a, a_len)+1);
-            print_arr(b, deg(b, 2*t)+1);
-            printf("BOTH GOOD\n");
+            //print_arr(a, deg(a, a_len)+1);
+            //print_arr(b, deg(b, 2*t)+1);
+            //printf("BOTH GOOD\n");
             int* q = gf_div_poly(b, a, deg(b,b_len)+1, deg(a,a_len)+1,0);
-            printf("PRINTING Q\n");
-            print_arr(q, deg(q, 2*t)+1);
-            printf("PRINTING X1\n");
-            print_arr(x1, deg(x1, 2*t)+1);
-            int* prod = gf_mult_poly(q, x1, deg(q, 2*t)+1, deg(x1, 2*t)+1);
+            //printf("PRINTING Q\n");
+            //print_arr(q, deg(q, b_len)+1);
+            //printf("PRINTING X1 t = %d\n", t);
+            //print_arr(x1, deg(x1, a_len)+1);
+            int* prod = gf_mult_poly(q, x1, deg(q, b_len)+1, deg(x1, a_len)+1);
             
-            printf("PRINTING PROD\n");
-            print_arr(prod, deg(prod, 2*t)+1);
+            //printf("PRINTING PROD\n");
+            //print_arr(prod, deg(prod, 2*t)+1);
             int* x = gf_poly_add(y1, prod, deg(y1, 2*t)+1, deg(prod, 2*t)+1);
             int* y = x1;
 
@@ -518,10 +551,10 @@ int** euclid_alg_rec(int* a, int* b, int t, int a_len, int b_len){
             ret_val[0] = gcd;
             ret_val[1] = x;
             ret_val[2] = y;
-            printf("CONDITION 1 COMPLETE\n");
-            print_arr(gcd, deg(gcd, 2*t)+1);
-            print_arr(x, deg(x, 2*t)+1);
-            print_arr(y, deg(y, 2*t)+1);
+            //printf("CONDITION 1 COMPLETE\n");
+            //print_arr(gcd, deg(gcd, 2*t)+1);
+            //print_arr(x, deg(x, 2*t)+1);
+            //print_arr(y, deg(y, 2*t)+1);
 
             free(tmp_holder);
             return ret_val;
@@ -533,8 +566,8 @@ int** euclid_alg_rec(int* a, int* b, int t, int a_len, int b_len){
 
             int** ret_val = malloc(sizeof(int*)*3);
 
-            print_arr(x1, deg(x1, 2*t)+1);
-            print_arr(y1, deg(y1, 2*t)+1);
+            //print_arr(x1, deg(x1, 2*t)+1);
+            //print_arr(y1, deg(y1, 2*t)+1);
 
             ret_val[0] = gcd;
             ret_val[1] = y1;
@@ -554,8 +587,8 @@ int** euclid_alg_rec(int* a, int* b, int t, int a_len, int b_len){
             int* x = prod;
             int* y = x1;
 
-            print_arr(x, deg(x, 2*t)+1);
-            print_arr(y, deg(y, 2*t)+1);
+            // print_arr(x, deg(x, 2*t)+1);
+            // print_arr(y, deg(y, 2*t)+1);
 
             int** ret_val = malloc(sizeof(int*)*3);
 
@@ -591,7 +624,7 @@ int deg(int* poly, int size){
         return 0;
     }
     for(int i =size-1; i >= 0; i--){
-        if(poly[i] != 0){
+        if(poly[i] != 0 && poly[i] <= NW-1){
             return i;
         }
     }
@@ -641,9 +674,9 @@ int* x_pow(int pow){
 }
 
 int eval_poly(int* poly, int len, int x){
-    int num = 0;
+    unsigned int num = 0;
     for(int i =0; i < len; i++){
-        num ^= gf_mult(poly[i], gf_pow(x, i));
+        num ^= (unsigned int)gf_mult(poly[i], gf_pow(x, i));
     }
     return num;
 }
@@ -671,10 +704,15 @@ void decode(int* C, int k, int n){
 int main(){
     setup_tables();
 
-    int n = 10;
-    int k = 3;
+    int n = 255;
+    int k = 222;
     //int d = n-k+1;
-    int t = (n-k)/2;
+    int t =0;
+    if(  (n-k)%2 == 1){
+        t = ((n-k)/2)+1;
+    }else{
+        t = (n-k)/2;
+    }
 
     //local data to show encoding works
     encode_message(n,k,t);
@@ -711,8 +749,8 @@ int setup_tables(){
     unsigned int log = 0;
 
     x_to_w =  NW;
-    gflog = malloc(sizeof(unsigned int) * x_to_w);
-    gfilog = malloc(sizeof(unsigned int) * x_to_w);
+    gflog = malloc(sizeof(unsigned int) * (x_to_w));
+    gfilog = malloc(sizeof(unsigned int) * (x_to_w));
 
     b = 1;
     for(log = 0; log < x_to_w-1; log++){
@@ -735,11 +773,11 @@ int setup_tables(){
 
     }
 
-    //for(int i = 0; i < NW; i++){
-    //    printf("%d\t",gflog[i]);
-    //}
+    for(int i = 0; i < NW; i++){
+       printf("%d\t",gflog[i]);
+    }
 
-    //printf("\n");
+    printf("\n");
 
     //exit(1);
 
@@ -753,7 +791,8 @@ int gf_mult(int a, int b){
 
     if(a == 0 || b == 0) return 0;
     sum_log = (int)gflog[a] + (int)gflog[b];
-    if(sum_log >= NW-1){ 
+    if(sum_log >= NW-1){
+        //printf("%d\n", sum_log); 
         sum_log -= NW-1;
     }
     //printf("%d\n", sum_log);
@@ -769,7 +808,7 @@ int* gf_mult_poly(int* a, int* b, int a_len, int b_len){
         return ret;
     }
 
-    int new_poly_size = deg(a, a_len) + deg(b, b_len);
+    int new_poly_size = deg(a, a_len) + deg(b, b_len)+1;
 
     int* new_poly = malloc(sizeof(int)*new_poly_size);
     
@@ -781,8 +820,11 @@ int* gf_mult_poly(int* a, int* b, int a_len, int b_len){
         for(int j = b_len-1; j >= 0; j--){
             if(a[i] > NW || b[j] > NW) { print_arr(a, a_len); print_arr(b,b_len); printf("A_LEN=%d\t B_LEN=%d\t NEW_SIZE=%d\n", a_len, b_len, new_poly_size);}
             //printf("INSIDE DIS SHIT\n");
-            if(new_poly[i+j] == 0) {new_poly[i+j] = (unsigned int)gf_mult(a[i], b[j]);
-            }else{new_poly[i+j] ^= (unsigned int)gf_mult(a[i], b[j]);}
+            if(new_poly[i+j] == 0){
+                new_poly[i+j] = (unsigned int)gf_mult(a[i], b[j]);
+            }else{
+                new_poly[i+j] ^= (unsigned int)gf_mult(a[i], b[j]);
+            }
             
         }
     }
@@ -873,7 +915,7 @@ int* gf_div_poly(int* a, int* b, int a_len, int b_len, int remainder){
 
     while(i >= b_len-1){
         int coeff = gf_div(dividend[i], divisor[b_len-1]);
-        //printf("Coeff = %d a=%d\t b=%d\t div_location=%d\t pos=%d \t i=%d\t b_len-1=%d\n", coeff, dividend[i], divisor[b_len-1],div_location,pos,i,b_len-1);
+        //printf("Coeff = %d a=%d\t b=%d\t div_location=%d\t pos=%d \t i=%d\t b_len-1=%d\n", coeff, dividend[i], divisor[b_len-1],div_location,pos,i,a_len-1);
         //print_arr(dividend, a_len); 
         //print_arr(divisor, b_len); 
         q[(i-b_len+1)] = coeff;
@@ -897,6 +939,7 @@ int* gf_div_poly(int* a, int* b, int a_len, int b_len, int remainder){
         i = deg(dividend,a_len);
 
     }
+    //printf("QUOTIENT IN DIV FUNC.\n");
     //print_arr(q, a_len);
 
 
@@ -925,9 +968,9 @@ int gf_pow(unsigned int a, int b){
     unsigned int ret = 1;
     for (int i =0; i < b; i++){
         ret = (unsigned int) gf_mult(ret, a);
-        //printf("ret=%d\t a=%d\t b=%d\n", ret, a, b);
-        //sleep(1);
     }
+    //printf("ret=%d\t a=%d\t b=%d\n", ret, a, b);
+    //sleep(1);
     return ret;
 }
 
