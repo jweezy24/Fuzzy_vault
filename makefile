@@ -8,4 +8,4 @@ reed2:
 	gcc reedSolo2.c -Wall -g3 -lm -o reed2.o simulated_input.o
 
 galois:
-	cd polynomial_lib && gcc galois.c -Wall -g3 -lm -o galois.o
+	cd polynomial_lib && gcc galois.c -Wall -g3 -lm -o galois.o ../simulated_input.o
