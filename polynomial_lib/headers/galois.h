@@ -10,6 +10,8 @@ typedef struct polynomial{
     int size;
 }poly;
 
+
+
 long p = pow(2,4);
 unsigned int NW = 1 << 4;
 unsigned int *gflog, *gfilog;
@@ -51,6 +53,8 @@ poly* sigma_r(poly* s);
 int eval_poly(poly* p, int x);
 poly* roots_of_poly(poly* sigma_r, int t, int n);
 poly* negative_poly(poly* p);
+poly* berlecamp_table(poly* S);
+poly* inverse_poly(poly* p);
 
 
 //field math
@@ -58,3 +62,4 @@ int gf_mult(int a, int b);
 int gf_div(int a, int b);
 int setup_tables();
 int gf_pow(unsigned int a, int b);
+int gf_inverse(int num);
