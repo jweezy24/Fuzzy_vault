@@ -16,7 +16,7 @@ typedef struct syndrome{
 }synd;
 
 
-
+int pow_2 = 4;
 long p = pow(2,4);
 unsigned int NW = 1 << 4;
 unsigned int *gflog, *gfilog;
@@ -38,6 +38,9 @@ void bin(unsigned n);
 void print_arr(int* a, int len );
 unsigned int str_int(char* str);
 void print_mat(int** mat, int row, int col);
+int find_coeff_row_reduction(int a, int b);
+void display_message(poly* M);
+int bin_num(unsigned n);
 
 
 //polynomial data structure functions
@@ -62,6 +65,7 @@ poly* negative_poly(poly* p);
 poly* berlecamp_table(poly* S, int t);
 poly* inverse_poly(poly* p);
 poly* error_correction(poly* roots, poly* S);
+void reassemble_message(poly* errors, poly* locations, poly* M);
 
 
 //field math

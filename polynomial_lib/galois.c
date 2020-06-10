@@ -8,7 +8,7 @@ int main(){
     int n = NW-1;
     int k = 9;
     //int d = n-k+1;
-    int t = 3;
+    int t = (n-k)/2;
 
     // printf("Generator = %d\n", generator);
 
@@ -42,20 +42,39 @@ int main(){
     for(int i = 0; i < C->size; i++){
         //5% chance of error
         //printf("%d\n", rand());
-        if(rand()%200 > 180 &&  errors < t){
-            unsigned int val = rand()%5;
-            C->coeffs[i] = (unsigned int)C->coeffs[i] ^ 1;
-            printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, 1);
-            errors+=1;
+        if(rand()%200 > 100 &&  errors <= t){
+            unsigned int val = rand()%(int)pow(2,pow_2);
+            if( bin_num(val) + errors <= t){
+                C->coeffs[i] = (unsigned int)C->coeffs[i] ^ val;
+                printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, val);
+                errors+=bin_num(val);
+            }
         }
     }
 
-    // C->coeffs[4] = (unsigned int)C->coeffs[4] ^ 1;
-    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", 4, 1);
-    // C->coeffs[7] = (unsigned int)C->coeffs[7] ^ 1;
-    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", 7, 1);
-    // C->coeffs[9] = (unsigned int)C->coeffs[9] ^ 1;
-    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", 9 , 1);
+    printf("THERE ARE %d BIT ERRORS\n", errors);
+
+    // int a = 1;
+    // int a_2 = 216;
+    // int b = 8;
+    // int b_2 = 2;
+    // int c = 9;
+    // int c_2 = 149;
+    // int d = 41;
+    // int d_2 = 24;
+    // int e = 120;
+    // int e_2 = 64;
+
+    // C->coeffs[a] = (unsigned int)C->coeffs[a] ^ a_2;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", a, a_2);
+    // C->coeffs[b] = (unsigned int)C->coeffs[b] ^ b_2;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", b, b_2);
+    // C->coeffs[c] = (unsigned int)C->coeffs[c] ^ c_2;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", c , c_2);
+    // C->coeffs[d] = (unsigned int)C->coeffs[d] ^ d_2;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", d, d_2);
+    // C->coeffs[e] = (unsigned int)C->coeffs[e] ^ e_2;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", e , e_2);
 
     // printf("Q(x) = ");
     // print_poly(C);
@@ -69,14 +88,16 @@ int main(){
 
     //poly* sig = euclid_alg(S, t);
 
-    if(S->synds <= (2*t)-2){
-        printf("Failure\n");
+    if(S->synds == 1 && S->p->coeffs[0] == 0){
+        printf("No message issue\n");
         exit(1);
     }
+
+    printf("Syndromes = %d\n", S->synds);
     
     poly* sig = berlecamp_table(S->p, S->synds);
 
-    // printf("Sig = ");
+    // printf("Syndromes = %d\n", S->synds);
     // print_poly(sig);
 
     if(sig != 0){
@@ -91,7 +112,30 @@ int main(){
         //printf("roots are = ");
         //print_poly(roots);
 
-        error_correction(roots,  S->p);
+        poly* errors = error_correction(roots,  S->p);
+
+        reassemble_message(errors, roots, C);
+
+        poly* M2 = gf_div_poly(C, g_x,0);
+
+        print_poly(M);
+        printf("Original: ");
+        display_message(M);
+        print_poly(M2);
+        printf("Corrected:");
+        display_message(M2);
+
+        int check = 1;
+        for(int i = 0; i < M->size; i++){
+            if(M->coeffs[i] != M2->coeffs[i]){
+                check = 0;
+            }
+        }
+
+        if(check){
+            printf("STREAMS MATCH\n");
+        }
+
 
     }
 
@@ -419,13 +463,13 @@ poly* g(int t){
 
 poly* m_(int n, int k, int t){
     poly* M = create_poly(k);
-    char* tmp = malloc(sizeof(char)*9);
+    char* tmp = malloc(sizeof(char)*pow_2);
     int pos_holder = 0;
     int bits_pos = 0;
     int count = 0;
     
-    for(int i =0; i <= k*8; i++){
-        if(count%8 == 0 && count > 0){
+    for(int i =0; i <= k*pow_2; i++){
+        if(count%pow_2 == 0 && count > 0){
             unsigned int tmp_h = (unsigned int)str_int(tmp);
             M->coeffs[pos_holder] = tmp_h;
             pos_holder++;
@@ -473,7 +517,7 @@ void bin(unsigned n) {
 unsigned int str_int(char* str){
     int tmp_num = 0;
     unsigned int num = 0;
-    int size = 7;
+    int size = pow_2-1;
 
     for (int i =0; i <= size; i++){
         if(str[i] == '0'){
@@ -729,6 +773,12 @@ poly* berlecamp_table(poly* S, int t){
 
     int n, d;
 
+    
+    if(t <= (S->size)-2){
+        t = S->size;
+    }
+    printf("t=%d\n", t);
+
     for(n = 0; n < t; n++){
         d = S->coeffs[n];
         for(int i =1; i <= L; i++){
@@ -801,8 +851,15 @@ poly* error_correction(poly* roots, poly* S){
     }
     //print_mat(matrix,  S->size, roots->size+1);
 
+   print_mat(matrix,  S->size, roots->size+1);
+   printf("\n");
     for(int i = 0; i < roots->size+1; i++){
-        int* tmp_row = matrix[i];
+        int* tmp_row = malloc(sizeof(int)* roots->size+1);
+
+        for(int j = 0; j < roots->size+1; j++){
+            tmp_row[j] = matrix[i][j];
+        }
+        
         for(int j = i+1; j < S->size; j++){
             int coeff = find_coeff_row_reduction(tmp_row[i], matrix[j][i]);
 
@@ -811,6 +868,7 @@ poly* error_correction(poly* roots, poly* S){
                 exit(1);
             }
             
+            //printf("j=%d\n", j);
             for(int k = 0; k < roots->size+1; k++){
                 tmp_row[k] = gf_mult(tmp_row[k], coeff);
             }
@@ -818,10 +876,13 @@ poly* error_correction(poly* roots, poly* S){
             for(int k = 0; k < roots->size+1; k++){
                 matrix[j][k] = tmp_row[k] ^ matrix[j][k];
             }
+
+            //printf("Coeff = %d\n", coeff );
         
 
         }
         print_mat(matrix,  S->size, roots->size+1);
+        printf("\n");
     }
     poly* errors = create_poly(roots->size);
     for(int i=S->size-1; i >= 0; i--){
@@ -875,6 +936,8 @@ int find_coeff_row_reduction(int a, int b){
     int res = 0;
     if(b == 0){
         return b;
+    }if(a == 0){
+        return 1;
     }
     for(int i = 1; i < NW; i++){
         tmp = gf_mult(a, i);
@@ -886,6 +949,39 @@ int find_coeff_row_reduction(int a, int b){
 
     return NW;
 }
+
+void reassemble_message(poly* errors, poly* locations, poly* M){
+    int location = 0;
+    int error = 0;
+
+    for(int i =0; i < M->size; i++){
+        for(int j = 0; j < errors->size; j++){
+            location = locations->coeffs[j];
+            error = errors->coeffs[j];
+            if(location == i){
+                M->coeffs[location] ^= error;
+                break;
+            }
+        }
+    }
+
+}
+
+void display_message(poly* M){
+    for(int i =0; i < M->size; i++){
+        bin(M->coeffs[i]);
+    }
+    printf("\n");
+}
+
+int bin_num(unsigned n) { 
+    unsigned i;
+    int count = 0; 
+    for (i = 1 << 16; i > 0; i = i / 2) 
+        (n & i)? count+=1: 0;
+    return count;
+   //printf("\n"); 
+} 
 
 int gf_inverse(int num){
 
