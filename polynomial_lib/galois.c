@@ -6,9 +6,11 @@ extern char bits[];
 int main(){
     setup_tables();
     int n = NW-1;
-    int k = 5;
+    int k = 9;
     //int d = n-k+1;
-    int t = ((n-k)/2);
+    int t = 3;
+
+    // printf("Generator = %d\n", generator);
 
 
     time_t dd;
@@ -35,22 +37,25 @@ int main(){
     // printf("g(x) = ");
     // print_poly(g_x);
 
-    printf("C(x) = ");
-    print_poly(C);
-
-
 
     int errors = 0;
     for(int i = 0; i < C->size; i++){
         //5% chance of error
         //printf("%d\n", rand());
-        if(rand()%200 > 190 &&  errors < t){
+        if(rand()%200 > 180 &&  errors < t){
             unsigned int val = rand()%5;
             C->coeffs[i] = (unsigned int)C->coeffs[i] ^ 1;
             printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, 1);
             errors+=1;
         }
     }
+
+    // C->coeffs[4] = (unsigned int)C->coeffs[4] ^ 1;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", 4, 1);
+    // C->coeffs[7] = (unsigned int)C->coeffs[7] ^ 1;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", 7, 1);
+    // C->coeffs[9] = (unsigned int)C->coeffs[9] ^ 1;
+    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", 9 , 1);
 
     // printf("Q(x) = ");
     // print_poly(C);
@@ -60,11 +65,16 @@ int main(){
 
 
 
-    poly* S = syndome_calculator_division(C,  g_x, t);
+    synd* S = syndome_calculator_division(C,  g_x, t);
 
     //poly* sig = euclid_alg(S, t);
+
+    if(S->synds <= (2*t)-2){
+        printf("Failure\n");
+        exit(1);
+    }
     
-    poly* sig = berlecamp_table(S);
+    poly* sig = berlecamp_table(S->p, S->synds);
 
     // printf("Sig = ");
     // print_poly(sig);
@@ -80,6 +90,8 @@ int main(){
         poly* roots = roots_of_poly(s_r,t,n);
         //printf("roots are = ");
         //print_poly(roots);
+
+        error_correction(roots,  S->p);
 
     }
 
@@ -386,9 +398,9 @@ poly* g(int t){
     int count = 0;
         
     poly* tmp_1 = create_poly(2);
-    tmp_1->coeffs[0] = 1;
+    tmp_1->coeffs[0] = generator;
     tmp_1->coeffs[1] = 1;
-    for(int i = 1; i < 2*t; i++){
+    for(int i = 2; i <= 2*t; i++){
         poly* tmp_2 = create_poly(2);
         tmp_2->coeffs[0] = gf_pow(generator, i);
         tmp_2->coeffs[1] = 1;
@@ -475,17 +487,35 @@ unsigned int str_int(char* str){
     return num;
 }
 
-poly* syndome_calculator_division(poly* C, poly* g, int t){
+synd* syndome_calculator_division(poly* C, poly* g, int t){
 
     poly* s = gf_div_poly(C, g,1);
     poly* S = create_poly(2*t);
+    synd* sy = malloc(sizeof(synd));
+    int iter = 1;
+    sy->p = S;
+    sy->synds = 0;
     for(int i = 1; i <= 2*t; i++){
-        S->coeffs[i-1] = eval_poly(s, gf_pow(generator, i)); 
+        S->coeffs[i-1] = eval_poly(s, gf_pow(generator, i));
+        for(int j = 0; j < i; j++){
+            if(S->coeffs[i-1] == S->coeffs[j] && i-1 != j){
+                iter = 0;
+            }
+        }
+        if(iter == 1){
+            sy->synds += 1;
+        }
+        iter = 1; 
     }
+
+    printf("Syndromes are = ");
+    print_poly(sy->p);
+
+    printf("amount of syndromes = %d\n", sy->synds);
 
     resize_poly(S);
 
-    return S;
+    return sy;
 
 
 
@@ -632,10 +662,10 @@ poly* sigma_r(poly* s){
 
 poly* roots_of_poly(poly* sigma_r, int t, int n){
     poly* zeros_ = create_poly(n);
-    int zeros = 1;
+    int zeros = 0;
     unsigned int num = 0;
 
-    for(int i=0; i < NW; i++){
+    for(int i=0; i < NW-1; i++){
         num = (unsigned int) eval_poly(sigma_r, gf_pow(generator, i));
         //eval_poly(sigma_r, len, gf_pow(generator, i));
         // printf("%d\n", num);
@@ -659,6 +689,8 @@ poly* roots_of_poly(poly* sigma_r, int t, int n){
     //     //printf("%d\n", zeros);
     // }
 
+    resize_poly(zeros_);
+
     return zeros_;
 }
 
@@ -667,7 +699,7 @@ poly* negative_poly(poly* p){
     for(int i =0; i < p->size; i++){
         int coeff = 0;
         int tmp = 0;
-        for(int j =0; j < p; j++){
+        for(int j =0; j < p->size; j++){
             tmp = j^p->coeffs[i];
             if(tmp == 0){
                 coeff = j;
@@ -680,40 +712,40 @@ poly* negative_poly(poly* p){
 }
 
 
-poly* berlecamp_table(poly* S){
+poly* berlecamp_table(poly* S, int t){
 
     poly* C = create_poly(2);
     C->coeffs[0]  = 1;
     poly* B = create_poly(2);
     B->coeffs[0] = 1;
 
-    printf("S(x) = ");
-    print_poly(S);
+    
 
     int m = 1;
-
-    int d = 0;
 
     int L = 0;
 
     int b = 1;
 
-    int n;
+    int n, d;
 
-    for(n = 0; n < S->size/2; n++){
+    for(n = 0; n < t; n++){
         d = S->coeffs[n];
         for(int i =1; i <= L; i++){
+    
             d ^= gf_mult(C->coeffs[i], S->coeffs[n-i]);
         }
-        printf("Size of S(x) = %d\n", S->size);
+        
         if (d == 0){
             m = m+1;
-        }else if(2*L <= n){
+        }else if(2*L <= n+1){
             poly* T = C;
             int coeff = gf_mult(d,gf_inverse(b));
 
             poly* tmp = create_poly(m+1);
             tmp->coeffs[m] = coeff;
+
+            
 
             C = gf_poly_add(C, gf_mult_poly(tmp, B));
             L = n + 1 - L;
@@ -728,6 +760,7 @@ poly* berlecamp_table(poly* S){
             C = gf_poly_add(C, gf_mult_poly(tmp, B));
             m=m+1;
         }
+        
     }
 
     printf("L = %d\n", L);
@@ -750,6 +783,109 @@ poly* inverse_poly(poly* p){
     return p;
 }
 
+poly* error_correction(poly* roots, poly* S){
+    
+    int** matrix = malloc(sizeof(int*)* S->size);
+
+    //init matrix for error locations
+    for(int i = 0; i < S->size; i++){
+        int* tmp = malloc(sizeof(int)* (roots->size+1));
+        for(int j =0; j < roots->size+1; j++){
+            if(j < roots->size){
+                tmp[j] = gf_pow(gf_pow(generator, roots->coeffs[j]), i+1);
+            }else{
+                tmp[j] = S->coeffs[i];
+            }
+        }
+        matrix[i] = tmp;    
+    }
+    //print_mat(matrix,  S->size, roots->size+1);
+
+    for(int i = 0; i < roots->size+1; i++){
+        int* tmp_row = matrix[i];
+        for(int j = i+1; j < S->size; j++){
+            int coeff = find_coeff_row_reduction(tmp_row[i], matrix[j][i]);
+
+            if(coeff == NW){
+                printf("ERROR A = %d \t B = %d\n", tmp_row[i], matrix[j][i]);
+                exit(1);
+            }
+            
+            for(int k = 0; k < roots->size+1; k++){
+                tmp_row[k] = gf_mult(tmp_row[k], coeff);
+            }
+
+            for(int k = 0; k < roots->size+1; k++){
+                matrix[j][k] = tmp_row[k] ^ matrix[j][k];
+            }
+        
+
+        }
+        print_mat(matrix,  S->size, roots->size+1);
+    }
+    poly* errors = create_poly(roots->size);
+    for(int i=S->size-1; i >= 0; i--){
+        int* tmp_row = matrix[i];
+        if(tmp_row[roots->size-1] != 0){
+            int S_i = tmp_row[roots->size];
+            for(int j = errors->size-1; j >= 0; j--){
+                if(errors->coeffs[j] == 0){
+                    int tmp_co =0;
+                    int tmp_err = 0;
+                    for(int k = j; k < roots->size; k++){
+                        if(i < j){
+                            tmp_co = gf_mult(errors->coeffs[k], tmp_row[k]);
+                            S_i ^= tmp_co;
+                        }else{
+                            int check = 1;
+                            for(int l = 1; l < NW  && check == 1; l++){
+                                tmp_err = gf_mult(tmp_row[k], l);
+                                if(tmp_err == S_i){
+                                    check =0;
+                                    errors->coeffs[j] = l;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    printf("Error correction at each coeffiecnt = \n");
+    print_poly(errors);
+
+
+
+    return errors;
+
+}
+
+void print_mat(int** mat, int row, int col){
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < col; j++){
+            printf("%d \t", mat[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int find_coeff_row_reduction(int a, int b){
+    int tmp = 0;
+    int res = 0;
+    if(b == 0){
+        return b;
+    }
+    for(int i = 1; i < NW; i++){
+        tmp = gf_mult(a, i);
+        res = tmp ^ b;
+        if(res == 0){
+            return i;
+        }
+    }
+
+    return NW;
+}
 
 int gf_inverse(int num){
 

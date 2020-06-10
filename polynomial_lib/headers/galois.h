@@ -10,6 +10,11 @@ typedef struct polynomial{
     int size;
 }poly;
 
+typedef struct syndrome{
+    poly* p;
+    int synds;
+}synd;
+
 
 
 long p = pow(2,4);
@@ -32,6 +37,7 @@ int generator = (unsigned int)0b1011;
 void bin(unsigned n);
 void print_arr(int* a, int len );
 unsigned int str_int(char* str);
+void print_mat(int** mat, int row, int col);
 
 
 //polynomial data structure functions
@@ -46,15 +52,16 @@ void resize_poly(poly* p);
 int deg(poly* p);
 poly* g(int t);
 poly* m_(int n, int k, int t);
-poly* syndome_calculator_division(poly* C, poly* g, int t);
+synd* syndome_calculator_division(poly* C, poly* g, int t);
 poly* euclid_alg(poly* S, int t);
 poly** euclid_alg_rec(poly* a, poly* b, poly* q, poly* r, int t);
 poly* sigma_r(poly* s);
 int eval_poly(poly* p, int x);
 poly* roots_of_poly(poly* sigma_r, int t, int n);
 poly* negative_poly(poly* p);
-poly* berlecamp_table(poly* S);
+poly* berlecamp_table(poly* S, int t);
 poly* inverse_poly(poly* p);
+poly* error_correction(poly* roots, poly* S);
 
 
 //field math
