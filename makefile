@@ -9,3 +9,6 @@ reed2:
 
 galois:
 	cd polynomial_lib && gcc galois.c -Wall -g3 -lm -o galois.o ../simulated_input.o
+
+fuzzy:
+	cd polynomial_lib && gcc fuzzy.c -Wall -g3 -lm -lpthread -o fuzzy.o ../simulated_input.o
