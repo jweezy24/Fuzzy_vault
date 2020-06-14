@@ -1,4 +1,3 @@
-#include "./galois.c"
 #include "./headers/fuzzy.h"
 
 
@@ -6,16 +5,35 @@ int main(){
     setup_tables();
     int n = NW-1;
     int k = 9;
+    //int d = n-k+1;
     int t = (n-k)/2;
-    int r = 12;
+    int r = t + k;
 
-    printf("t=%d\tr=%d\n", t,r);
+    // printf("Generator = %d\n", generator);
+
+
+    time_t dd;
+    srand((unsigned) time(&dd));
 
     poly* g_x = g(t);
 
-    int** R = lock(k,t,r,g_x);
+    poly* M = m_(n, t , t);
 
-    poly* res = unlock(R, g_x, k,t,r);
+    poly* x_2t = create_poly(2*t+1);
+    x_2t->coeffs[2*t] = 1;
+
+    //M = gf_mult_poly(M,x_2t);
+
+    //poly* Q = gf_div_poly(M, g_x, 0);
+    //poly* CK = gf_div_poly(M, g_x, 1);
+
+    //poly* C = gf_poly_add(M,CK);
+    poly* C = gf_mult_poly(M,g_x);
+
+
+    int** R = lock(k,t,r,M);
+
+    unlock(R, M, k,t,r);
 
     //print_poly(res);
     
@@ -25,20 +43,19 @@ int main(){
 }
 
 //we will use bits as the data we want to encode.
-int** lock(int k, int t, int r, poly* g){
+int** lock(int k, int t, int r, poly* p){
     int* X = malloc(sizeof(int)*(r));
     int** R = malloc(sizeof(int*)*(r));
-    poly* secret = create_secret_poly(t);
-    poly* p = gf_mult_poly(secret,g);
 
     printf("THE SECRET IS = ");
-    print_poly(secret);
+    print_poly(p);
 
     for(int i = 0; i < k; i++){
         int* tmp_list = malloc(sizeof(int)*2);
-        int num = sequence_of_bits(i+1);
+        int num = gf_pow(generator, i);
         if (num != -1){
             tmp_list[0] = num;
+            printf("eval_poly = %d\n",eval_poly(p, num));
             tmp_list[1] = eval_poly(p, num);
         }else{
             printf("Sequence of bits returned a bad value.\n");
@@ -99,13 +116,20 @@ poly* create_secret_poly(int k){
 
 }
 
-int** create_B(int k, int t, int r, poly* g){
-    int** R = malloc(sizeof(int*)*(r));
-    poly* secret = create_secret_poly(t);
-    poly* p = gf_mult_poly(g,secret);
-    for(int i = 0; i < r; i++){
+mat* create_matrix(int rows, int cols){
+    mat* ret = malloc(sizeof(mat));
+    ret->matrix = malloc(sizeof(int*)*rows);
+    ret->rows = rows;
+    ret->cols = cols;
+    return ret;
+}
+
+int** create_B(int k, int t, int r, poly* p){
+    int** R = malloc(sizeof(int*)*(r+t));
+
+    for(int i = 0; i < r+t; i++){
         int* tmp_list = malloc(sizeof(int)*2);
-        int num = sequence_of_bits(i+1);
+        int num = gf_pow(generator, i);
         if (num != -1){
             tmp_list[0] = num;
             tmp_list[1] = eval_poly(p, num);
@@ -122,7 +146,6 @@ int** create_B(int k, int t, int r, poly* g){
 
 int sequence_of_bits(int seq_number){
     char* tmp = malloc(sizeof(char)*pow_2);
-    int pos_holder = 0;
     int bits_pos = 0;
     int count = 0;
     
@@ -144,105 +167,50 @@ int sequence_of_bits(int seq_number){
     return -1;
 }
 
-poly* unlock(int** R, poly* g, int k, int t, int r){
-    int** B = create_B(k,t,r,g);
-    int** Q = malloc(sizeof(int*)*r);
+poly* unlock(int** R, poly* p, int k, int t, int r){
+    int** B = create_B(k,t,r,p);
+    int** Q = malloc(sizeof(int*)*(r));
+    int q_size = 0;
 
     for(int i = 0; i < r; i++){
+        int* tmp_row = R[i];
         for(int j = 0; j < r; j++){
-            if(R[i][0] == B[j][0] && R[i][1] == B[j][1]){
-                Q[i] = R[i];
-                break;
+            if(tmp_row[0] == B[j][0] && tmp_row[1] == B[j][1] && rand()%100 < 95){
+                Q[q_size] = tmp_row;
+                q_size+=1;
             }
+            
         } 
     }
 
-    poly* C = Q_to_poly(k,t,r,Q);
+    poly* C = Q_to_poly(q_size,t,r,Q);
     //RSDecode(t, C, g);
-    return 0;
+    return C;
 }
 
 poly* Q_to_poly(int k, int t, int r, int** Q){
-    int** matrix = malloc(sizeof(int*)*(r-t));
+    mat* matrix = create_matrix(k, t+1);
 
-    for(int i = 0; i < r-t; i++){
-        int* row = malloc(sizeof(int)* (2*t+1));
+
+    for(int i = 0; i < matrix->rows; i++){
+        int* row = malloc(sizeof(int)* (matrix->cols));
         int x = Q[i][0];
         int y = Q[i][1];
 
-        for(int j = 0; j < 2*t+1; j++){
-            if(j != 2*t){
+        for(int j = 0; j < matrix->cols; j++){
+            if(j != matrix->cols-1){
                 row[j] = gf_pow(x, j);
             }else{
                 row[j] = y;
             } 
         }
-        matrix[i] = row;
+        matrix->matrix[i] = row;
     }
 
-    for(int i = 0; i < r-t; i++){
-        int* tmp_row = malloc(sizeof(int)* 2*t+1);
+   gauss_elim(matrix);
 
-        for(int j = 0; j < 2*t+1; j++){
-            tmp_row[j] = matrix[i][j];
-        }
-        
-        for(int j = i+1; j < 2*t+1; j++){
-            int coeff = find_coeff_row_reduction(tmp_row[i], matrix[j][i]);
 
-            if(coeff == NW){
-                printf("ERROR A = %d \t B = %d\n", tmp_row[i], matrix[j][i]);
-                exit(1);
-            }
-            
-            //printf("j=%d\n", j);
-            for(int k = 0; k < 2*t+1; k++){
-                tmp_row[k] = gf_mult(tmp_row[k], coeff);
-            }
-
-            for(int k = 0; k < 2*t+1; k++){
-                matrix[j][k] = tmp_row[k] ^ matrix[j][k];
-            }
-
-            //printf("Coeff = %d\n", coeff );
-        
-
-        }
-        print_mat(matrix,  r-t, 2*t+1);
-        printf("\n");
-    }
-
-    poly* errors = create_poly(2*t);
-    for(int i=r-t-1; i >= 0; i--){
-        int* tmp_row = matrix[i];
-        if(tmp_row[2*t] != 0){
-            int S_i = tmp_row[2*t];
-            for(int j = errors->size-1; j >= 0; j--){
-                if(errors->coeffs[j] == 0){
-                    int tmp_co =0;
-                    int tmp_err = 0;
-                    for(int k = j; k < 2*t+1; k++){
-                        if(i < j){
-                            tmp_co = gf_mult(errors->coeffs[k], tmp_row[k]);
-                            S_i ^= tmp_co;
-                        }else{
-                            int check = 1;
-                            for(int l = 1; l < NW  && check == 1; l++){
-                                tmp_err = gf_mult(tmp_row[k], l);
-                                if(tmp_err == S_i){
-                                    check =0;
-                                    errors->coeffs[j] = l;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    print_poly(errors);
-    print_mat(matrix, 2*t, 2*t+1);
+    print_matrix(matrix);
     return 0;
 }
 
@@ -274,4 +242,16 @@ poly* RSDecode(int t, poly* C, poly* g){
 
     return 0;
 
+}
+
+
+
+
+void print_matrix(mat* matrix){
+    for(int i = 0; i < matrix->rows; i++){
+        for(int j = 0; j < matrix->cols; j++){
+            printf("%d \t", matrix->matrix[i][j]);
+        }
+        printf("\n");
+    }
 }

@@ -61,7 +61,6 @@ poly** euclid_alg_rec(poly* a, poly* b, poly* q, poly* r, int t);
 poly* sigma_r(poly* s);
 int eval_poly(poly* p, int x);
 poly* roots_of_poly(poly* sigma_r, int t, int n);
-poly* negative_poly(poly* p);
 poly* berlecamp_table(poly* S, int t);
 poly* inverse_poly(poly* p);
 poly* error_correction(poly* roots, poly* S);

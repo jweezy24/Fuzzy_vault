@@ -241,6 +241,7 @@ poly* gf_div_poly(poly* a, poly* b, int remainder){
         int num =  dividend->coeffs[i];
         int test = 0;
         int coeff = 0;
+        //int tmp = 0;
 
         for(int j = 1; j < p; j++){
             test = gf_mult(j,divisor->coeffs[b->size-1]);
@@ -256,7 +257,7 @@ poly* gf_div_poly(poly* a, poly* b, int remainder){
         //print_arr(dividend, a->size); 
         //print_arr(divisor, b->size); 
         q->coeffs[(i-b->size+1)] = coeff;
-        int tmp =0;
+        // int tmp =0;
 
         if(coeff != 0){
             int tmp_pos= 0;
@@ -264,7 +265,7 @@ poly* gf_div_poly(poly* a, poly* b, int remainder){
                 if (divisor->coeffs[j] != 0){
                     //printf("a=%d  b=%d b/a=%d range=%d\n", dividend[j], divisor[j], gf_div(coeff, divisor[j]), range);
                     //printf("product = %d\n", gf_mult(divisor[j], coeff));
-                    tmp = gf_mult(divisor->coeffs[j], coeff);
+                    //tmp = gf_mult(divisor->coeffs[j], coeff);
                     dividend->coeffs[i-tmp_pos] ^= gf_mult(divisor->coeffs[j], coeff);
                     //printf("x^%d + x^%d \n", i-tmp_pos, j);
                 }
@@ -298,8 +299,7 @@ poly* gf_div_poly(poly* a, poly* b, int remainder){
 }
 
 poly* g(int t){
-    int num = 0;
-    int count = 0;
+
         
     poly* tmp_1 = create_poly(2);
     tmp_1->coeffs[0] = generator;
@@ -435,7 +435,7 @@ poly* euclid_alg(poly* S, int t){
             
         }
 
-    int pos = 0;
+    //int pos = 0;
 
     //print_arr(x_2t, 2*t+1);
     //print_arr(S, 2*t);
@@ -596,23 +596,6 @@ poly* roots_of_poly(poly* sigma_r, int t, int n){
     resize_poly(zeros_);
 
     return zeros_;
-}
-
-poly* negative_poly(poly* p){
-    poly* ret = create_poly(p->size);
-    for(int i =0; i < p->size; i++){
-        int coeff = 0;
-        int tmp = 0;
-        for(int j =0; j < p->size; j++){
-            tmp = j^p->coeffs[i];
-            if(tmp == 0){
-                coeff = j;
-                break;
-            }
-        }
-        ret->coeffs[i] = tmp;
-    }
-    return ret;
 }
 
 
@@ -795,7 +778,7 @@ int find_coeff_row_reduction(int a, int b){
     int tmp = 0;
     int res = 0;
     if(b == 0){
-        return b;
+        return 0;
     }if(a == 0){
         return 1;
     }
