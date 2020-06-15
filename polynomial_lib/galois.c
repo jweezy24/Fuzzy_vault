@@ -413,7 +413,7 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
     }
 
     printf("Syndromes are = ");
-    print_poly(sy->p);
+    //print_poly(sy->p);
 
     printf("amount of syndromes = %d\n", sy->synds);
 
@@ -694,8 +694,8 @@ poly* error_correction(poly* roots, poly* S){
     }
     //print_mat(matrix,  S->size, roots->size+1);
 
-   print_mat(matrix,  S->size, roots->size+1);
-   printf("\n");
+   //print_mat(matrix,  S->size, roots->size+1);
+   //printf("\n");
     for(int i = 0; i < roots->size+1; i++){
         int* tmp_row = malloc(sizeof(int)* roots->size+1);
 
@@ -724,8 +724,8 @@ poly* error_correction(poly* roots, poly* S){
         
 
         }
-        print_mat(matrix,  S->size, roots->size+1);
-        printf("\n");
+        //print_mat(matrix,  S->size, roots->size+1);
+        //printf("\n");
     }
     poly* errors = create_poly(roots->size);
     for(int i=S->size-1; i >= 0; i--){

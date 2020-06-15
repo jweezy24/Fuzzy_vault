@@ -1,6 +1,6 @@
 #include "./headers/gauss.h"
 
-void gauss_elim(mat* matrix){
+poly* gauss_elim(mat* matrix){
     int* variables = malloc(sizeof(int)*matrix->cols-1);
     int start_row = determine_left_most_col(matrix);
     check_for_defined_variables(matrix, variables);
@@ -9,8 +9,27 @@ void gauss_elim(mat* matrix){
     }
     row_echelon(matrix);
     poly* p = translate_zeros(matrix);
-    print_poly(p);
+    //print_poly(p);
+    return p;
 
+}
+
+mat* create_matrix(int rows, int cols){
+    mat* ret = malloc(sizeof(mat));
+    ret->matrix = malloc(sizeof(int*)*rows);
+    ret->rows = rows;
+    ret->cols = cols;
+    return ret;
+}
+
+
+void print_matrix(mat* matrix){
+    for(int i = 0; i < matrix->rows; i++){
+        for(int j = 0; j < matrix->cols; j++){
+            printf("%d \t", matrix->matrix[i][j]);
+        }
+        printf("\n");
+    }
 }
 
 int determine_left_most_col(mat* matrix){
@@ -82,6 +101,7 @@ void check_for_defined_variables(mat* matrix, int* vars){
     int coeff = 0;
     int S_i = 0;
 
+
     for(int i = 0; i < matrix->rows; i++){
         non_zero_count = 0;
         for(int j = 0; j < matrix->cols-1; j++){
@@ -107,7 +127,7 @@ void check_for_defined_variables(mat* matrix, int* vars){
 
 void row_echelon(mat* matrix){
     int row_pos = 0;
-    for(int i = 0; i < matrix->cols-1; i++){
+    for(int i = 0; i < matrix->cols-1 && row_pos < matrix->rows; i++){
         int* tmp_row = malloc(sizeof(int)* matrix->cols);
 
         for(int j = 0; j < matrix->cols; j++){
@@ -154,7 +174,7 @@ void row_echelon(mat* matrix){
 
             //printf("Coeff = %d\n", coeff );
         
-
+            //print_matrix(matrix);
         }
     }
 }
@@ -173,18 +193,20 @@ poly* translate_zeros (mat* matrix){
     for(int i=matrix->rows-1; i >= 0; i--){
         int* tmp_row = matrix->matrix[i];
         int S_i = tmp_row[matrix->cols-1];
-        if(S_i != 0){
+        //printf("BEFORE S_I = %d\n", S_i);
+        //if(S_i != 0){
             
-            for(int j = errors->size-1; j >= 0; j--){
-                if(errors->coeffs[j] == -1){
-                    errors->coeffs[j] = S_i;
-                    break;
-                }else if(errors->coeffs[j] != -1){
-                    S_i ^= gf_mult(errors->coeffs[j], tmp_row[j]);
-                }
+        for(int j = errors->size-1; j >= 0; j--){
+            //printf("LOOP S_I = %d\n", S_i);
+            if(errors->coeffs[j] == -1){
+                errors->coeffs[j] = S_i;
+                break;
+            }else if(errors->coeffs[j] != -1){
+                S_i ^= gf_mult(errors->coeffs[j], tmp_row[j]);
             }
-            
         }
+            
+       // }
     }
 
     return errors;

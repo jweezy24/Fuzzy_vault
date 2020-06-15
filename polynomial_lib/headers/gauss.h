@@ -5,7 +5,7 @@ typedef struct matrix{
     int cols;
 }mat;
 
-void gauss_elim(mat* matrix);
+poly* gauss_elim(mat* matrix);
 int determine_left_most_col(mat* matrix);
 void row_swap(mat* matrix, int row_old, int row_new);
 void scale_row(int* row, int size, int scale);
@@ -16,3 +16,5 @@ void zero_row_move(mat* matrix, int row);
 int is_zero_row(mat* matrix, int row);
 void check_for_defined_variables(mat* matrix, int* vars);
 poly* translate_zeros (mat* matrix);
+void print_matrix(mat* matrix);
+mat* create_matrix(int rows, int cols);

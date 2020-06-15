@@ -1,13 +1,14 @@
 #include "./headers/fuzzy.h"
 
+int points =0;
 
 int main(){
     setup_tables();
-    int n = NW-1;
-    int k = 9;
-    //int d = n-k+1;
+    int n = 100;
+    int k = 25;
     int t = (n-k)/2;
-    int r = t + k;
+    //int d = n-k+1;
+    int r = 50;
 
     // printf("Generator = %d\n", generator);
 
@@ -17,10 +18,13 @@ int main(){
 
     poly* g_x = g(t);
 
-    poly* M = m_(n, t , t);
+    poly* M = m_(n, k , t);
 
     poly* x_2t = create_poly(2*t+1);
     x_2t->coeffs[2*t] = 1;
+
+    printf("Message is %d = ", k);
+    print_poly(M);
 
     //M = gf_mult_poly(M,x_2t);
 
@@ -30,48 +34,81 @@ int main(){
     //poly* C = gf_poly_add(M,CK);
     poly* C = gf_mult_poly(M,g_x);
 
+    points = 200;
 
-    int** R = lock(k,t,r,M);
+    printf("C(x) is = ");
+    print_poly(C);
 
-    unlock(R, M, k,t,r);
 
-    //print_poly(res);
+
+    int** R = lock(k,t,r,C);
+
+
+    int errors = 0;
+    for(int i = 0; i < NW; i++){
+        //5% chance of error
+        //printf("%d\n", rand());
+        if(rand()%200 > 190 &&  errors <= (k+t)/2){
+        int* tmp_row = R[i];
+        for(int j = 0; j < 2; j++){
+                unsigned int val = rand()%(int)pow(2,pow_2);
+                if( bin_num(val) + errors <= (k+t)/2){
+                    if(val%2){
+                        tmp_row[1] = (unsigned int)tmp_row[1] ^ val;
+                        printf("ERROR PUT IN Y %d ERROR OFF BY %d\n", i, val);
+                        errors+=bin_num(val);
+                    }else{
+                        tmp_row[0] = (unsigned int)tmp_row[0] ^ val;
+                        printf("ERROR PUT IN X %d ERROR OFF BY %d\n", i, val);
+                        errors+=bin_num(val);
+                    }
+                }
+            }
+        }
+    }
+
+    printf("THERE ARE %d BIT ERRORS\n", errors);
+
+    poly*  res = unlock(R, g_x, C, k,t,r);
+
+    printf("\nNEW POLY = ");
+    print_poly(res);
+    printf("\nOLD POLY = ");
+    print_poly(C);
     
     
     return 0; 
 
 }
 
+
 //we will use bits as the data we want to encode.
 int** lock(int k, int t, int r, poly* p){
-    int* X = malloc(sizeof(int)*(r));
-    int** R = malloc(sizeof(int*)*(r));
+    int* X = malloc(sizeof(int)*(NW));
+    int** R = malloc(sizeof(int*)*(NW));
 
     printf("THE SECRET IS = ");
     print_poly(p);
 
-    for(int i = 0; i < k; i++){
+    for(int i = 1; i < points+1; i++){
         int* tmp_list = malloc(sizeof(int)*2);
         int num = gf_pow(generator, i);
-        if (num != -1){
+        if (num != -1 && eval_poly(p, num) != 0){
+            //printf("x = %d\n", num);
             tmp_list[0] = num;
-            printf("eval_poly = %d\n",eval_poly(p, num));
             tmp_list[1] = eval_poly(p, num);
-        }else{
-            printf("Sequence of bits returned a bad value.\n");
-            exit(1);
         }
-        X[i] = num;
-        R[i] = tmp_list;
+        X[i-1] = num;
+        R[i-1] = tmp_list;
     }
 
-    int len = t;
+    int len = points;
     int check = 1;
 
     time_t dd;
     srand((unsigned) time(&dd));
 
-    for(int i = k; i < r;){
+    for(int i = points; i < NW;){
         int* tmp_list = malloc(sizeof(int)*2);
         int val = rand()%NW;
         for(int j =0; j < len && check == 1; j++){
@@ -116,18 +153,10 @@ poly* create_secret_poly(int k){
 
 }
 
-mat* create_matrix(int rows, int cols){
-    mat* ret = malloc(sizeof(mat));
-    ret->matrix = malloc(sizeof(int*)*rows);
-    ret->rows = rows;
-    ret->cols = cols;
-    return ret;
-}
-
 int** create_B(int k, int t, int r, poly* p){
-    int** R = malloc(sizeof(int*)*(r+t));
+    int** R = malloc(sizeof(int*)*(points));
 
-    for(int i = 0; i < r+t; i++){
+    for(int i = 1; i < points+1; i++){
         int* tmp_list = malloc(sizeof(int)*2);
         int num = gf_pow(generator, i);
         if (num != -1){
@@ -137,7 +166,7 @@ int** create_B(int k, int t, int r, poly* p){
             printf("Sequence of bits returned a bad value.\n");
             exit(1);
         }
-        R[i] = tmp_list;
+        R[i-1] = tmp_list;
     }
     return R;
 
@@ -167,15 +196,15 @@ int sequence_of_bits(int seq_number){
     return -1;
 }
 
-poly* unlock(int** R, poly* p, int k, int t, int r){
-    int** B = create_B(k,t,r,p);
-    int** Q = malloc(sizeof(int*)*(r));
+poly* unlock(int** R, poly* g, poly* C2, int k, int t, int r){
+    int** B = create_B(k,t,r,C2);
+    int** Q = malloc(sizeof(int*)*(NW));
     int q_size = 0;
 
-    for(int i = 0; i < r; i++){
+    for(int i = 0; i < points; i++){
         int* tmp_row = R[i];
-        for(int j = 0; j < r; j++){
-            if(tmp_row[0] == B[j][0] && tmp_row[1] == B[j][1] && rand()%100 < 95){
+        for(int j = 0; j < points; j++){
+            if(tmp_row[0] == B[j][0] && tmp_row[1] == B[j][1]){
                 Q[q_size] = tmp_row;
                 q_size+=1;
             }
@@ -183,14 +212,22 @@ poly* unlock(int** R, poly* p, int k, int t, int r){
         } 
     }
 
-    poly* C = Q_to_poly(q_size,t,r,Q);
-    //RSDecode(t, C, g);
+    printf("Q size = %d\n",q_size);
+    poly* C = Q_to_poly(q_size, k, t,r,Q);
+    printf("\n NEW C(x) = \n");
+    print_poly(C);
+    RSDecode(t, C, g);
     return C;
 }
 
-poly* Q_to_poly(int k, int t, int r, int** Q){
-    mat* matrix = create_matrix(k, t+1);
-
+poly* Q_to_poly(int points, int k, int t, int r, int** Q){
+    
+    mat* matrix =0;
+    if(points > 100){
+        matrix = create_matrix(100, 101);
+    }else{
+        return 0;
+    }
 
     for(int i = 0; i < matrix->rows; i++){
         int* row = malloc(sizeof(int)* (matrix->cols));
@@ -207,11 +244,11 @@ poly* Q_to_poly(int k, int t, int r, int** Q){
         matrix->matrix[i] = row;
     }
 
-   gauss_elim(matrix);
+    poly* p = gauss_elim(matrix);
 
 
-    print_matrix(matrix);
-    return 0;
+    //print_matrix(matrix);
+    return p;
 }
 
 poly* RSDecode(int t, poly* C, poly* g){
@@ -242,16 +279,4 @@ poly* RSDecode(int t, poly* C, poly* g){
 
     return 0;
 
-}
-
-
-
-
-void print_matrix(mat* matrix){
-    for(int i = 0; i < matrix->rows; i++){
-        for(int j = 0; j < matrix->cols; j++){
-            printf("%d \t", matrix->matrix[i][j]);
-        }
-        printf("\n");
-    }
 }
