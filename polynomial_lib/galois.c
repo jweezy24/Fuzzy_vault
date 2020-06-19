@@ -359,6 +359,9 @@ int eval_poly(poly* p, int x){
 
 int gf_pow(unsigned int a, int b){
     unsigned int ret = 1;
+    if(a == 0){
+        return 0;
+    }
     for (int i =0; i < b; i++){
         ret = (unsigned int) gf_mult(ret, a);
     }
@@ -565,7 +568,7 @@ poly* sigma_r(poly* s){
 }
 
 poly* roots_of_poly(poly* sigma_r, int t, int n){
-    poly* zeros_ = create_poly(n);
+    poly* zeros_ = create_poly(sigma_r->size);
     int zeros = 0;
     unsigned int num = 0;
 
@@ -678,8 +681,8 @@ poly* inverse_poly(poly* p){
 
 poly* error_correction(poly* roots, poly* S){
     
-    int** matrix = malloc(sizeof(int*)* S->size);
-
+    mat* matrix = create_matrix(S->size, roots->size+1);
+    print_poly(roots);
     //init matrix for error locations
     for(int i = 0; i < S->size; i++){
         int* tmp = malloc(sizeof(int)* (roots->size+1));
@@ -690,71 +693,11 @@ poly* error_correction(poly* roots, poly* S){
                 tmp[j] = S->coeffs[i];
             }
         }
-        matrix[i] = tmp;    
+        matrix->matrix[i] = tmp;    
     }
-    //print_mat(matrix,  S->size, roots->size+1);
-
-   //print_mat(matrix,  S->size, roots->size+1);
-   //printf("\n");
-    for(int i = 0; i < roots->size+1; i++){
-        int* tmp_row = malloc(sizeof(int)* roots->size+1);
-
-        for(int j = 0; j < roots->size+1; j++){
-            tmp_row[j] = matrix[i][j];
-        }
-        
-        for(int j = i+1; j < S->size; j++){
-            int coeff = find_coeff_row_reduction(tmp_row[i], matrix[j][i]);
-
-            if(coeff == NW){
-                printf("ERROR A = %d \t B = %d\n", tmp_row[i], matrix[j][i]);
-                exit(1);
-            }
-            
-            //printf("j=%d\n", j);
-            for(int k = 0; k < roots->size+1; k++){
-                tmp_row[k] = gf_mult(tmp_row[k], coeff);
-            }
-
-            for(int k = 0; k < roots->size+1; k++){
-                matrix[j][k] = tmp_row[k] ^ matrix[j][k];
-            }
-
-            //printf("Coeff = %d\n", coeff );
-        
-
-        }
-        //print_mat(matrix,  S->size, roots->size+1);
-        //printf("\n");
-    }
-    poly* errors = create_poly(roots->size);
-    for(int i=S->size-1; i >= 0; i--){
-        int* tmp_row = matrix[i];
-        if(tmp_row[roots->size-1] != 0){
-            int S_i = tmp_row[roots->size];
-            for(int j = errors->size-1; j >= 0; j--){
-                if(errors->coeffs[j] == 0){
-                    int tmp_co =0;
-                    int tmp_err = 0;
-                    for(int k = j; k < roots->size; k++){
-                        if(i < j){
-                            tmp_co = gf_mult(errors->coeffs[k], tmp_row[k]);
-                            S_i ^= tmp_co;
-                        }else{
-                            int check = 1;
-                            for(int l = 1; l < NW  && check == 1; l++){
-                                tmp_err = gf_mult(tmp_row[k], l);
-                                if(tmp_err == S_i){
-                                    check =0;
-                                    errors->coeffs[j] = l;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    
+    poly* errors = gauss_elim(matrix);
+    
 
     printf("Error correction at each coeffiecnt = \n");
     print_poly(errors);

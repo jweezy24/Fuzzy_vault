@@ -66,6 +66,7 @@ poly* berlecamp_table(poly* S, int t);
 poly* inverse_poly(poly* p);
 poly* error_correction(poly* roots, poly* S);
 void reassemble_message(poly* errors, poly* locations, poly* M);
+int poly_eq(poly* p1, poly* p2);
 
 
 //field math

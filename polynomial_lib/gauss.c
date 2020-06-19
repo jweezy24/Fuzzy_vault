@@ -22,6 +22,20 @@ mat* create_matrix(int rows, int cols){
     return ret;
 }
 
+int poly_eq(poly* p1, poly* p2){
+    resize_poly(p1);
+    resize_poly(p2);
+    if(p1->size != p2->size){
+        return 0;
+    }
+    for(int i = 0; i < p1->size; i++){
+        if(p1->coeffs[i] != p2->coeffs[i]){
+            return 0;
+        }
+    }
+    return 1;
+}
+
 
 void print_matrix(mat* matrix){
     for(int i = 0; i < matrix->rows; i++){

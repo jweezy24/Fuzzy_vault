@@ -19,6 +19,8 @@ int main(){
     poly* g_x = g(t);
 
     poly* M = m_(n, k , t);
+    
+    int errors = 0;
 
     poly* x_2t = create_poly(2*t+1);
     x_2t->coeffs[2*t] = 1;
@@ -33,6 +35,7 @@ int main(){
 
     //poly* C = gf_poly_add(M,CK);
     poly* C = gf_mult_poly(M,g_x);
+    poly* C2 = gf_mult_poly(M,g_x);
 
     points = 200;
 
@@ -40,41 +43,75 @@ int main(){
     print_poly(C);
 
 
-
-    int** R = lock(k,t,r,C);
-
-
-    int errors = 0;
-    for(int i = 0; i < NW; i++){
+    for(int i = 0; i < C->size; i++){
         //5% chance of error
         //printf("%d\n", rand());
-        if(rand()%200 > 190 &&  errors <= (k+t)/2){
-        int* tmp_row = R[i];
-        for(int j = 0; j < 2; j++){
-                unsigned int val = rand()%(int)pow(2,pow_2);
-                if( bin_num(val) + errors <= (k+t)/2){
-                    if(val%2){
-                        tmp_row[1] = (unsigned int)tmp_row[1] ^ val;
-                        printf("ERROR PUT IN Y %d ERROR OFF BY %d\n", i, val);
-                        errors+=bin_num(val);
-                    }else{
-                        tmp_row[0] = (unsigned int)tmp_row[0] ^ val;
-                        printf("ERROR PUT IN X %d ERROR OFF BY %d\n", i, val);
-                        errors+=bin_num(val);
-                    }
-                }
+        if(rand()%200 > 100 &&  errors <= (k+t)/2){
+            unsigned int val = rand()%(int)pow(2,pow_2);
+            if( bin_num(val) + errors <= (k+t)/2){
+                C->coeffs[i] = (unsigned int)C->coeffs[i] ^ val;
+                printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, val);
+                errors+=bin_num(val);
             }
         }
     }
 
+
+
+    int** R = lock(k,t,r,C);
+
+    // Adds error to points
+     
+    // for(int i = 0; i < NW; i++){
+    //     //5% chance of error
+    //     //printf("%d\n", rand());
+    //     if(rand()%200 > 190 &&  errors <= t){
+    //     int* tmp_row = R[i];
+    //     for(int j = 0; j < 2; j++){
+    //             unsigned int val = rand()%(int)pow(2,pow_2);
+    //             if( bin_num(val) + errors <= t){
+    //                 if(val%2){
+    //                     tmp_row[1] = (unsigned int)tmp_row[1] ^ val;
+    //                     printf("ERROR PUT IN Y %d ERROR OFF BY %d\n", i, val);
+    //                     errors+=bin_num(val);
+    //                 }else{
+    //                     tmp_row[0] = (unsigned int)tmp_row[0] ^ val;
+    //                     printf("ERROR PUT IN X %d ERROR OFF BY %d\n", i, val);
+    //                     errors+=bin_num(val);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+
+    // for(int i = 0; i < C->size; i++){
+    //     //5% chance of error
+    //     //printf("%d\n", rand());
+    //     if(rand()%200 > 100 &&  errors <= (k+t)/2){
+    //         unsigned int val = rand()%(int)pow(2,pow_2);
+    //         if( bin_num(val) + errors <= (k+t)/2){
+    //             C->coeffs[i] = (unsigned int)C->coeffs[i] ^ val;
+    //             printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, val);
+    //             errors+=bin_num(val);
+    //         }
+    //     }
+    // }
+
     printf("THERE ARE %d BIT ERRORS\n", errors);
 
-    poly*  res = unlock(R, g_x, C, k,t,r);
-
+    poly*  res = unlock(R, g_x, C2, k,t,r);
+    if(res == 0) exit(1);
     printf("\nNEW POLY = ");
     print_poly(res);
     printf("\nOLD POLY = ");
     print_poly(C);
+
+    if(poly_eq(res, C)){
+        printf("BOTH POLYS ARE EQUAL\n");
+    }else{
+        printf("THERE EXISTS A FUCK UP\n");
+    }
     
     
     return 0; 
@@ -204,7 +241,7 @@ poly* unlock(int** R, poly* g, poly* C2, int k, int t, int r){
     for(int i = 0; i < points; i++){
         int* tmp_row = R[i];
         for(int j = 0; j < points; j++){
-            if(tmp_row[0] == B[j][0] && tmp_row[1] == B[j][1]){
+            if(tmp_row[0] == B[j][0]){
                 Q[q_size] = tmp_row;
                 q_size+=1;
             }
@@ -226,6 +263,7 @@ poly* Q_to_poly(int points, int k, int t, int r, int** Q){
     if(points > 100){
         matrix = create_matrix(100, 101);
     }else{
+        printf("NOT ENOUGH POINTS TO RECREATE MESSAGE.\n");
         return 0;
     }
 
