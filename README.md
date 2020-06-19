@@ -32,6 +32,6 @@ I want to implement functionality with other datasets. For now all I have functi
 
 ## Authors
 
-* **Jack West** - *Front-end, Server Dev, and networking Dev* - [jweezy24](https://github.com/jweezy24)
+* **Jack West** - [jweezy24](https://github.com/jweezy24)
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
