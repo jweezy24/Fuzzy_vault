@@ -55,7 +55,7 @@ void free_poly(poly* p);
 void resize_poly(poly* p);
 int deg(poly* p);
 poly* g(int t);
-poly* m_(int n, int k, int t);
+poly* m_(int n, int k, int t, int bits_start);
 synd* syndome_calculator_division(poly* C, poly* g, int t);
 poly* euclid_alg(poly* S, int t);
 poly** euclid_alg_rec(poly* a, poly* b, poly* q, poly* r, int t);

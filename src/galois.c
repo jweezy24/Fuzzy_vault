@@ -321,11 +321,11 @@ poly* g(int t){
 }
 
 
-poly* m_(int n, int k, int t){
+poly* m_(int n, int k, int t, int bits_start){
     poly* M = create_poly(k);
     char* tmp = malloc(sizeof(char)*pow_2);
     int pos_holder = 0;
-    int bits_pos = 0;
+    int bits_pos = pow_2*bits_start;
     int count = 0;
     
     for(int i =0; i <= k*pow_2; i++){
