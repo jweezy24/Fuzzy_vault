@@ -17,7 +17,7 @@ def parse_data(filepath):
     plt.plot(x_axis,y_axis)
     plt.ylabel('Percent Chance of a Failed Key')
     plt.xlabel('Percent Chance of Noise Interference')
-    plt.savefig("./paper/figures/noise_to_key_accuracy.pdf")
+    plt.savefig("../Fuzzy_paper/paper/figures/noise_to_key_accuracy.pdf")
 
 
 def main():
