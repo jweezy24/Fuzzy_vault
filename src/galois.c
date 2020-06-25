@@ -415,10 +415,10 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
         iter = 1; 
     }
 
-    printf("Syndromes are = ");
+   // printf("Syndromes are = ");
     //print_poly(sy->p);
 
-    printf("amount of syndromes = %d\n", sy->synds);
+    //printf("amount of syndromes = %d\n", sy->synds);
 
     resize_poly(S);
 
@@ -444,7 +444,7 @@ poly* euclid_alg(poly* S, int t){
     //print_arr(S, 2*t);
 
     int degree = deg(S);
-    printf("DEGREE=%d\n", deg(S));
+    //printf("DEGREE=%d\n", deg(S));
     poly** euc;
 
     if(degree == 0 && S->coeffs[0] == 0){
@@ -457,17 +457,17 @@ poly* euclid_alg(poly* S, int t){
     poly* x = euc[1];
     poly* gcd = euc[0];
 
-    printf("S = ");
-    print_poly(S);
+    //printf("S = ");
+    //print_poly(S);
 
-    printf("GCD = ");
-    print_poly(gcd);
+    //printf("GCD = ");
+    //print_poly(gcd);
 
-    printf("x = ");
-    print_poly(x);
+    //printf("x = ");
+    //print_poly(x);
 
-    printf("y = ");
-    print_poly(y);
+    //printf("y = ");
+    //print_poly(y);
 
     return y;
 
@@ -579,7 +579,7 @@ poly* roots_of_poly(poly* sigma_r, int t, int n){
         if(num == 0){
             zeros_->coeffs[zeros] = i;
             zeros++;
-            printf("ZERO AT %d\n", i);
+            //printf("ZERO AT %d\n", i);
         }
         //printf("%d\n", zeros);
     }
@@ -623,7 +623,7 @@ poly* berlecamp_table(poly* S, int t){
     if(t <= (S->size)-2){
         t = S->size;
     }
-    printf("t=%d\n", t);
+    //printf("t=%d\n", t);
 
     for(n = 0; n < t; n++){
         d = S->coeffs[n];
@@ -659,7 +659,7 @@ poly* berlecamp_table(poly* S, int t){
         
     }
 
-    printf("L = %d\n", L);
+    //printf("L = %d\n", L);
 
     if(L == 0){
         return 0;
@@ -682,7 +682,7 @@ poly* inverse_poly(poly* p){
 poly* error_correction(poly* roots, poly* S){
     
     mat* matrix = create_matrix(S->size, roots->size+1);
-    print_poly(roots);
+    //print_poly(roots);
     //init matrix for error locations
     for(int i = 0; i < S->size; i++){
         int* tmp = malloc(sizeof(int)* (roots->size+1));
@@ -699,8 +699,8 @@ poly* error_correction(poly* roots, poly* S){
     poly* errors = gauss_elim(matrix);
     
 
-    printf("Error correction at each coeffiecnt = \n");
-    print_poly(errors);
+    //printf("Error correction at each coeffiecnt = \n");
+    //print_poly(errors);
 
 
 

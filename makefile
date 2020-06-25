@@ -6,3 +6,9 @@ fuzzy:
 
 run:
 	./src/tests/tests.o
+
+debug:
+	gdb ./src/tests/tests.o
+
+graphs:
+	python3 ./src/analysis/analize_correct_keys.py

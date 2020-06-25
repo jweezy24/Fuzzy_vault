@@ -7,8 +7,8 @@ int** lock(int k, int t, int r, poly* p){
     int* X = malloc(sizeof(int)*(NW));
     int** R = malloc(sizeof(int*)*(NW));
 
-    printf("THE SECRET IS = ");
-    print_poly(p);
+    //printf("THE SECRET IS = ");
+    //print_poly(p);
 
     for(int i = 1; i < points+1; i++){
         int* tmp_list = malloc(sizeof(int)*2);
@@ -132,10 +132,10 @@ poly* unlock(int** R, poly* g, poly* C2, int k, int t, int r){
         } 
     }
 
-    printf("Q size = %d\n",q_size);
+    //printf("Q size = %d\n",q_size);
     poly* C = Q_to_poly(q_size, k, t,r,Q);
-    printf("\n NEW C(x) = \n");
-    print_poly(C);
+    //printf("\n NEW C(x) = \n");
+    //print_poly(C);
     RSDecode(t, C, g);
     return C;
 }
@@ -182,8 +182,8 @@ poly* RSDecode(int t, poly* C, poly* g){
         //print_poly(sig);
 
         poly* s_r = sigma_r(sig);
-        printf("Sigma_r = ");
-        print_poly(s_r);
+        //printf("Sigma_r = ");
+        //print_poly(s_r);
 
         poly* roots = roots_of_poly(s_r,t,NW-1);
         //printf("roots are = ");
