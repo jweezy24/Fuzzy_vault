@@ -21,6 +21,10 @@ int pow_2 = 8;
 long p = pow(2,8);
 unsigned int NW = 1 << 8;
 unsigned int *gflog, *gfilog;
+int points =0;
+int stream_count = 0;
+int stream_count_layers[2] = {0,0};
+int percent = 0;
 
 //4 Bit
 // unsigned int prim_poly = (unsigned int) 0b10011;
@@ -42,6 +46,7 @@ void print_mat(int** mat, int row, int col);
 int find_coeff_row_reduction(int a, int b);
 void display_message(poly* M);
 int bin_num(unsigned n);
+int check_range(int* range, int num);
 
 
 //polynomial data structure functions
@@ -88,15 +93,15 @@ void *machine2();
 void start_threads();
 
 //utils
-int sequence_of_bits(int seq_number);
+int sequence_of_bits(int seq_number, int flip);
 
 //fuzzy vault specific methods
-int** lock(int k, int t, int r, poly* g);
+int* lock(int k, int t, int r, poly* g);
 poly* create_secret_poly(int k);
-int** create_B(int k, int t, int r, poly* g);
-poly* unlock(int** R, poly* g, poly* p, int k, int t, int r);
+int* create_B(int k, int t, int r, poly* g);
+poly* unlock(int* R, poly* g, poly* p, int k, int t, int r);
 poly* Q_to_poly(int points, int k, int t, int r, int** Q);
-poly* RSDecode(int t, poly* C, poly* g);
+poly* RSDecode(int t, poly* C, poly* C2, poly* g);
 
 
 //matrix methods

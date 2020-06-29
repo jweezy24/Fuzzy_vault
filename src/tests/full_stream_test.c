@@ -6,69 +6,102 @@ int main(){
     int n = 100;
     int k = 25;
     int t = (n-k)/2;
-    //int d = n-k+1;
     int r = 50;
 
     for(int per = 0; per <= 10; per++){
 
-        int percent = per*10;
+        percent = per*10;
 
         //int streams = (int)(29478361/8);
-        int streams = 10000;
+        int runs = 1000;
         int count_c = 0;
+        stream_count_layers[0] = 0;
+        stream_count_layers[1] = 0;
 
-        for(int i = 0; i < streams; i++){
+        for(int i = 0; i < runs; i++){
 
             poly* g_x = g(t);
 
-            poly* M = m_(n, k , t, i);
+            poly* M = m_(n, k , t, stream_count_layers[0]);
             
             int errors = 0;
 
             poly* x_2t = create_poly(2*t+1);
             x_2t->coeffs[2*t] = 1;
 
-            poly* C = gf_mult_poly(M,g_x);
             poly* C2 = gf_mult_poly(M,g_x);
 
-            points = 200;
+            points = 100;
 
-            for(int i = 0; i < C->size; i++){
+            for(int l = 0; l < M->size; l++){
                 //5% chance of error
                 //printf("%d\n", rand());
-                if((rand()%100) > 100-percent){
-                    unsigned int val = (rand()%(int)pow(2,pow_2)) + 1;
-                    if(val >= (int)pow(2,pow_2) ) val = 1;
-                    C->coeffs[i] = (unsigned int)C->coeffs[i] ^ val;
-                    // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, val);
-                    errors+=bin_num(val);
-                    
+                for(int j = 0; j < pow_2; j++){
+                    int tmp_num = rand()%100;
+                    //printf("Random = %d\n", tmp_num);
+                    if( tmp_num > 100-percent){
+                        unsigned int val = (int)pow(2,j);
+                        //bin(val);
+                        //printf("\n");
+                        M->coeffs[l] = (unsigned int)M->coeffs[l] ^ val;
+                        // printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", i, val); 
+                        errors+=bin_num(val);
+                        //printf("Errors = %d\n", errors);
+                        
+                    }
                 }
             }
 
+            poly* C = gf_mult_poly(M,g_x);
 
-
-            int** R = lock(k,t,r,C);
-
-            //printf("THERE ARE %d BIT ERRORS\n", errors);
-
-            poly*  res = unlock(R, g_x, C2, k,t,r);
-            if(res == 0) exit(1);
-            // printf("\nNEW POLY = ");
-            // print_poly(res);
-            // printf("\nOLD POLY = ");
+            // printf("C = ");
             // print_poly(C);
 
-            int correct = poly_eq(res, C);
-            if (correct == 0) count_c +=1;
+            // printf("C2 = ");
+            // print_poly(C2);
+
+
+            int* R = lock(k,t,r,C);
+
+            // printf("THERE ARE %d BIT ERRORS\n", errors);
+
+
+            poly*  res = unlock(R, g_x, C2, k,t,r);
+            if(res == 0){
+                printf("***************FAILURE****************\n"); 
+                count_c+=1;
+            }else{
+            // printf("\nC = ");
+            // print_poly(C);
+            // printf("\nCorrected Poly = ");
+            // print_poly(res);
+            // printf("\nC2 = ");
+            // print_poly(C2);
+
+            int correct = poly_eq(C2, res);
+            if(correct) printf("***************CORRECT****************\n");
+            if (correct == 0) {
+                count_c +=1; 
+                printf("***************FAILURE****************\n");
+                printf("\nC = ");
+                print_poly(C);
+                printf("\nCorrected Poly = ");
+                print_poly(res);
+                printf("\nC2 = ");
+                print_poly(C2);
+                }
+            printf("Stream_count A = %d\n", stream_count_layers[0]);
+            printf("Stream_count B = %d\n", stream_count_layers[1]);
+            }
         }
 
         //log_st("");
 
-        array_c* number2 = int_to_str(streams);
+        array_c* number2 = int_to_str(runs);
         array_c* number = int_to_str(count_c);
         array_c* frac = make_fraction(number, number2);
         log_final_line(frac, percent);
+        
 
     }
     

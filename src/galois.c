@@ -327,14 +327,17 @@ poly* m_(int n, int k, int t, int bits_start){
     int pos_holder = 0;
     int bits_pos = pow_2*bits_start;
     int count = 0;
-    
+
+
     for(int i =0; i <= k*pow_2; i++){
         if(count%pow_2 == 0 && count > 0){
             unsigned int tmp_h = (unsigned int)str_int(tmp);
             M->coeffs[pos_holder] = tmp_h;
             pos_holder++;
             count = 0;
-            i--; 
+            i--;
+            stream_count_layers[0]+=1;
+            stream_count_layers[1]+=1; 
         }else{
             tmp[count] = bits[bits_pos];
             count+=1;
@@ -399,6 +402,8 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
     poly* s = gf_div_poly(C, g,1);
     poly* S = create_poly(2*t);
     synd* sy = malloc(sizeof(synd));
+    printf("s = ");
+    print_poly(s);
     int iter = 1;
     sy->p = S;
     sy->synds = 0;
@@ -415,7 +420,7 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
         iter = 1; 
     }
 
-   // printf("Syndromes are = ");
+    //printf("Syndromes are = ");
     //print_poly(sy->p);
 
     //printf("amount of syndromes = %d\n", sy->synds);
@@ -428,131 +433,6 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
 
 }
 
-poly* euclid_alg(poly* S, int t){
-    poly* x_2t = create_poly(2*t+1);
-    x_2t->coeffs[x_2t->size-1] = 1;
-
-    poly* zero = create_poly(2*t);
-    for(int i = 0; i < 2*t; i++) {
-            zero->coeffs[i]= 0;
-            
-        }
-
-    //int pos = 0;
-
-    //print_arr(x_2t, 2*t+1);
-    //print_arr(S, 2*t);
-
-    int degree = deg(S);
-    //printf("DEGREE=%d\n", deg(S));
-    poly** euc;
-
-    if(degree == 0 && S->coeffs[0] == 0){
-        return 0;
-    }else{
-        euc = euclid_alg_rec(x_2t, S, zero, zero, t);
-    }
-
-    poly* y = euc[2];
-    poly* x = euc[1];
-    poly* gcd = euc[0];
-
-    //printf("S = ");
-    //print_poly(S);
-
-    //printf("GCD = ");
-    //print_poly(gcd);
-
-    //printf("x = ");
-    //print_poly(x);
-
-    //printf("y = ");
-    //print_poly(y);
-
-    return y;
-
-}
-
-poly** euclid_alg_rec(poly* a, poly* b, poly* q, poly* r, int t){
-    
-    // printf("Printing Polnomial A\n");
-    // print_poly(a);
-    // printf("Printing Polnomial B\n");
-    // print_poly(b);
-    // printf("Printing Polnomial q\n");
-    // print_poly(q);
-    // printf("Printing Polnomial r\n");
-    // print_poly(r);
-
-    int degree = 0;
-
-    if(b->size > 1){
-        degree = b->size;
-    }else{
-        degree = 0;
-    }
-    //printf("DEGREE IN REC ALG=%d\n", degree);
-    if (degree < t+1){
-        poly** ret_val = malloc(sizeof(poly*)*3);
-        resize_poly(b);
-        resize_poly(a);
-
-        ret_val[0] = b;
-        ret_val[1] = gf_mult_poly(q, r);
-        ret_val[2] = a;
-        return ret_val;
-    }else{
-
-        //printf("INNER DEGREE A = %d\n", degree);
-        
-        
-        poly* r = gf_div_poly(a, b, 1);
-        poly* q = gf_div_poly(a, b, 0);
-        poly** tmp_holder = euclid_alg_rec(b, r, q, a, t);
-        
-        poly* gcd = tmp_holder[0];
-        poly* x1 = tmp_holder[1];
-        poly* y1 = tmp_holder[2];
-
-        //printf("Printing X1 and X2\n");
-    
-
-
-        
-        //print_arr(a, deg(a, a->size)+1);
-        //print_arr(b, deg(b, 2*t)+1);
-        //printf("BOTH GOOD\n");
-        poly* q1 = gf_div_poly(b, a, 0);
-        //printf("a->size=%d b->size=%d\n", a->size, b->size);
-        //print_arr(q, deg(q, b->size)+1);
-        //printf("PRINTING X1 t = %d\n", t);
-        //print_poly(q);
-        poly* prod = gf_mult_poly(q1, x1);
-        
-        
-        //printf("PRINTING PROD\n");
-        //print_arr(prod, deg(prod, 2*t)+1);
-        poly* x = gf_poly_add(y1, prod);
-        poly* y = x1;
-
-        poly** ret_val = malloc(sizeof(poly*)*3);
-
-
-        ret_val[0] = gcd;
-        ret_val[1] = x;
-        ret_val[2] = y;
-        //printf("CONDITION 1 COMPLETE\n");
-        //print_arr(gcd, deg(gcd, 2*t)+1);
-        //print_arr(x, deg(x, 2*t)+1);
-        //print_arr(y, deg(y, 2*t)+1);
-
-        free(tmp_holder);
-        return ret_val;
-        
-    }
-
-
-}
 
 
 poly* sigma_r(poly* s){
