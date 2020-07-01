@@ -8,6 +8,7 @@ poly* gauss_elim(mat* matrix){
         row_swap(matrix, 0, start_row);
     }
     row_echelon(matrix);
+   //print_matrix(matrix);
     poly* p = translate_zeros(matrix);
     //print_poly(p);
     return p;

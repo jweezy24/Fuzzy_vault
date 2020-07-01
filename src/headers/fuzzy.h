@@ -47,6 +47,7 @@ int find_coeff_row_reduction(int a, int b);
 void display_message(poly* M);
 int bin_num(unsigned n);
 int check_range(int* range, int num);
+int cardinality(int x);
 
 
 //polynomial data structure functions

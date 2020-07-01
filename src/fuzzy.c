@@ -17,24 +17,31 @@ int* lock(int k, int t, int r, poly* p){
     //print_poly(p);
     int rotation = 0;
     int raised = 1;
+    
     printf("Stream_count Start1 = %d\n", stream_count_layers[1]);
     stream_count_layers[1] = stream_count_layers[0];
     int range[3] = {0,0,0};
     int stream_count = stream_count_layers[0];
     int zeros = 0;
     
-    for(int i = 0; i < points;){
-        int num = gf_pow(sequence_of_bits(stream_count,percent), raised%NW);
-        // int num = gf_pow(generator, i);
+    for(int i = 0; i < NW;){
+        int x = sequence_of_bits(stream_count,percent);
+        //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,percent));
+        //int card = cardinality(x);
+        int num = x;
+        //printf("Cardinality of %d = %d\n", x, card);
+        //int num = gf_pow(generator, raised%NW);
+        //int num = gf_pow(generator, i);
+        int y = eval_poly(p, num);
         //printf("in_range = %d\n", in_range);
-        if (num != -1 && R[num] == -1 && X[num] == 0){
-            //printf("NUM = %d\n", num);
-            int in_range = check_range(range, num);
-            if(in_range){
+        //printf("NUM = %d\n", num);
+        if (num != -1 && R[num] == -1 && X[num] == 0){ //&& card >= points){
+            //int in_range = check_range(range, num);
+            //if(in_range){
                 X[num] = 1;
-                R[num] = eval_poly(p, num);
+                R[num] = y;
                 i++;
-            }
+            //}
         }
         raised +=1;
         rotation+=1;
@@ -49,12 +56,12 @@ int* lock(int k, int t, int r, poly* p){
     time_t dd;
     srand((unsigned) time(&dd));
 
-    for(int i = points; i < NW;i++){
-        if(R[i] == -1){
-            int val = rand()%NW;
-            R[i] = val;
-        }
-    }
+    // for(int i = 0; i < NW;i++){
+    //     if(R[i] == -1){
+    //         int val = rand()%NW;
+    //         R[i] = val;
+    //     }
+    // }
     return R;
 
 }
@@ -90,15 +97,22 @@ int* create_B(int k, int t, int r, poly* p){
     int range[3] = {0,0,0};
     int zeros = 0;
 
-    for(int i = 0; i < points;){
-        int num = gf_pow( sequence_of_bits(stream_count,0), raised%NW);
+    for(int i = 0; i < NW-2;){
+        int x = sequence_of_bits(stream_count,0);
+        //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,0));
+        //int card = cardinality(x);
+        int num = x;
+        //printf("Cardinality of %d = %d\n", x, card);
+        //int num = gf_pow(generator, raised%NW);
+        //int num = gf_pow(generator, i);
+        int y = eval_poly(p, x);
+        //printf("Cardinality of %d = %d\n", x, card);
 
         if (num != -1 && R[num] == -1 && X[num] == 0){
-            //printf("NUM = %d\n", num);
             int in_range = check_range(range, num);
             if(in_range){
                 X[num] = 1;
-                R[num] = eval_poly(p, num);
+                R[num] = y;
                 i++;
             }
         }
@@ -163,14 +177,19 @@ int check_range(int* range, int num){
 }
 
 int is_close(int a, int b){
+    int max = 1;
+    int min = 1;
+    
     if(a == 0 && b == 0){
         return 1;
     }
     if(a==0 || b == 0){
         return 0;
     }
-    printf("a/b=%f\n", (float)(a/b));
-    if( (float) (a/b) > .8){
+    if(a > b) {max = a; min = b;}
+    if(a <= b) {max = b; min = a;}
+    printf("a/b=%f\n", (float)min/(float)max);
+    if( (float)min/(float)max > .8){
         return 1;
     }else{
         return 0;
@@ -187,8 +206,8 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
         int* tmp_row = malloc(sizeof(int)*2);
         tmp_row[0] = i;
         // for(int j = 0; j < points; j++){
-        if(B[i] != -1 && is_close(B[i], R[i])){
-           ///*if(B[i] != R[i])*/ printf("WRONG MAP B[i] = %d \t R[i] = %d\n", B[i], R[i]);
+        if(B[i] != -1 && is_close(R[i],B[i])){
+            ///*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
             tmp_row[1] = R[i];
             Q[q_size] = tmp_row;
             q_size+=1;
@@ -208,12 +227,13 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
     return new;
 }
 
-poly* Q_to_poly(int points, int k, int t, int r, int** Q){
+
+poly* Q_to_poly(int points_2, int k, int t, int r, int** Q){
     
     mat* matrix =0;
-    //printf("Qsize = %d\n", points);
-    if(points >= 100){
-        matrix = create_matrix(100, 101);
+    printf("Inside dis funct big boy.\n");
+    if(points_2 >= points){
+        matrix = create_matrix(points, points+1);
     }else{
         printf("NOT ENOUGH POINTS TO RECREATE MESSAGE.\n");
         return 0;
@@ -228,6 +248,7 @@ poly* Q_to_poly(int points, int k, int t, int r, int** Q){
             if(j != matrix->cols-1){
                 row[j] = gf_pow(x, j);
             }else{
+                //printf("y = %d\n", y);
                 row[j] = y;
             } 
         }
@@ -248,10 +269,12 @@ poly* RSDecode(int t, poly* C, poly* C2, poly* g){
     poly* div = gf_div_poly(C,g, 0);
     poly* div2 = gf_div_poly(C2,g, 0);
 
-    poly* re = gf_div_poly(C,g, 1);
-    if(re->size > 1 && re->coeffs[0] != 0){
-        return 0;
-    }
+    // poly* re = gf_div_poly(C, g, 1);
+    // if(re->size > 1 && re->coeffs[0] != 0){
+    //     printf("C = ");
+    //     print_poly(C);
+    //     return 0;
+    // }
 
     poly* sum = gf_poly_add(div,div2);
 
@@ -266,56 +289,56 @@ poly* RSDecode(int t, poly* C, poly* C2, poly* g){
 
     poly* corrected_p = gf_mult_poly(corrected, g);
 
-    if(errors > 50){
+    if(errors > points/2){
         return 0;
     }else{
         return corrected_p;
     }
 
-    synd* S = syndome_calculator_division(C,  g, t);
+    // synd* S = syndome_calculator_division(C,  g, t);
 
 
-    if( poly_eq(C2, C)){
-        return C;
-    }
+    // if( poly_eq(C2, C)){
+    //     return C;
+    // }
 
-    poly* sig = berlecamp_table(S->p, S->synds);
+    // poly* sig = berlecamp_table(S->p, S->synds);
 
-    if(sig != 0){
-        printf("Sigma = ");
-        print_poly(sig);
+    // if(sig != 0){
+    //     printf("Sigma = ");
+    //     print_poly(sig);
 
-        poly* s_r = sigma_r(sig);
-        //printf("Sigma_r = ");
-        //print_poly(s_r);
+    //     poly* s_r = sigma_r(sig);
+    //     //printf("Sigma_r = ");
+    //     //print_poly(s_r);
 
-        poly* roots = roots_of_poly(s_r,t,NW-1);
-        //printf("roots are = ");
-        //print_poly(roots);
+    //     poly* roots = roots_of_poly(s_r,t,NW-1);
+    //     //printf("roots are = ");
+    //     //print_poly(roots);
 
-        poly* errors = error_correction(roots,  S->p);
-        printf("errors = ");
-        print_poly(errors);
-        reassemble_message(errors, roots, C);
-        printf("Corrected C = ");
-        print_poly(C);
+    //     poly* errors = error_correction(roots,  S->p);
+    //     printf("errors = ");
+    //     print_poly(errors);
+    //     reassemble_message(errors, roots, C);
+    //     printf("Corrected C = ");
+    //     print_poly(C);
 
-        //poly* M2 = gf_div_poly(p, g,0);
+    //     //poly* M2 = gf_div_poly(p, g,0);
 
-        return C;
-    }else{
-        printf("SIG WAS 0\n");
-        return C;
-    }
+    //     return C;
+    // }else{
+    //     printf("SIG WAS 0\n");
+    //     return C;
+    // }
 
 }
 
 int sequence_of_bits(int seq_number, int flip){
     char* tmp = malloc(sizeof(char)*pow_2);
-    int bits_pos = 0;
+    int bits_pos = seq_number*(pow_2-1);
     int count = 0;
     
-    for(int i = 0; i <= seq_number*pow_2; i++){
+    for(int i = seq_number*(pow_2-1); i <= seq_number*pow_2; i++){
         if(count%pow_2 == 0 && count > 0){
             if( i == seq_number*pow_2){
                 unsigned int tmp_h = (unsigned int)str_int(tmp);
@@ -340,4 +363,15 @@ int sequence_of_bits(int seq_number, int flip){
         
     }
     return -1;
+}
+
+int cardinality(int x){
+    int num = x;
+    int count =0;
+    if(x == 0) return 0;
+    while(num != 1){
+        count+=1;
+        num = gf_mult(num,x);
+    }
+    return count;
 }

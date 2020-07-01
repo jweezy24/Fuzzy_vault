@@ -3,7 +3,7 @@
 
 int main(){
     setup_tables();
-    int n = 100;
+    int n = 60;
     int k = 25;
     int t = (n-k)/2;
     int r = 50;
@@ -13,7 +13,7 @@ int main(){
         percent = per*10;
 
         //int streams = (int)(29478361/8);
-        int runs = 1000;
+        int runs = 10000;
         int count_c = 0;
         stream_count_layers[0] = 0;
         stream_count_layers[1] = 0;
@@ -61,14 +61,20 @@ int main(){
             // print_poly(C2);
 
 
-            int* R = lock(k,t,r,C);
+            //int* R = lock(k,t,r,C);
 
             // printf("THERE ARE %d BIT ERRORS\n", errors);
 
 
-            poly*  res = unlock(R, g_x, C2, k,t,r);
+            poly*  res = RSDecode(t, C, C2, g_x);
             if(res == 0){
                 printf("***************FAILURE****************\n"); 
+                // printf("\nC = ");
+                // print_poly(C);
+                // printf("\nCorrected Poly = 0\n");
+                // printf("\nC2 = ");
+                // print_poly(C2);
+                //exit(0);
                 count_c+=1;
             }else{
             // printf("\nC = ");
@@ -79,19 +85,21 @@ int main(){
             // print_poly(C2);
 
             int correct = poly_eq(C2, res);
-            if(correct) printf("***************CORRECT****************\n");
+            if(correct) {printf("***************CORRECT****************\n"); }
             if (correct == 0) {
                 count_c +=1; 
                 printf("***************FAILURE****************\n");
-                printf("\nC = ");
-                print_poly(C);
-                printf("\nCorrected Poly = ");
-                print_poly(res);
-                printf("\nC2 = ");
-                print_poly(C2);
+                // printf("\nC = ");
+                // print_poly(C);
+                // printf("\nCorrected Poly = ");
+                // print_poly(res);
+                // printf("\nC2 = ");
+                // print_poly(C2);
                 }
             printf("Stream_count A = %d\n", stream_count_layers[0]);
             printf("Stream_count B = %d\n", stream_count_layers[1]);
+            if(stream_count_layers[0] > stream_count_layers[1]) stream_count_layers[1] = stream_count_layers[0];
+            if(stream_count_layers[1] >= stream_count_layers[0]) stream_count_layers[0] = stream_count_layers[1];
             }
         }
 
