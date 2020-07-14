@@ -8,7 +8,7 @@ poly* gauss_elim(mat* matrix){
         row_swap(matrix, 0, start_row);
     }
     row_echelon(matrix);
-   //print_matrix(matrix);
+    //print_matrix(matrix);
     poly* p = translate_zeros(matrix);
     //print_poly(p);
     return p;
@@ -189,8 +189,8 @@ void row_echelon(mat* matrix){
 
             //printf("Coeff = %d\n", coeff );
         
-            //print_matrix(matrix);
         }
+        //print_matrix(matrix);
     }
 }
 
@@ -209,19 +209,20 @@ poly* translate_zeros (mat* matrix){
         int* tmp_row = matrix->matrix[i];
         int S_i = tmp_row[matrix->cols-1];
         //printf("BEFORE S_I = %d\n", S_i);
-        //if(S_i != 0){
+        
+        if(is_zero_row(matrix, i) == 0){
             
-        for(int j = errors->size-1; j >= 0; j--){
-            //printf("LOOP S_I = %d\n", S_i);
-            if(errors->coeffs[j] == -1){
-                errors->coeffs[j] = S_i;
-                break;
-            }else if(errors->coeffs[j] != -1){
-                S_i ^= gf_mult(errors->coeffs[j], tmp_row[j]);
+            for(int j = errors->size-1; j >= 0; j--){
+                //printf("LOOP S_I = %d\n", S_i);
+                if(errors->coeffs[j] == -1){
+                    errors->coeffs[j] = S_i;
+                    break;
+                }else if(errors->coeffs[j] != -1){
+                    S_i ^= gf_mult(errors->coeffs[j], tmp_row[j]);
+                }
             }
-        }
             
-       // }
+       }
     }
 
     return errors;

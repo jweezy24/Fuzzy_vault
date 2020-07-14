@@ -2,9 +2,7 @@ galois:
 	cd src && gcc galois.c -Wall -g3 -lm -o galois.o ../simulated_input.o
 
 fuzzy:
-	cd src/tests && gcc full_stream_test.c -Wall -g3 -lm -lpthread -o tests.o ../../simulated_input.o
-
-run:
+	cd src/tests && gcc full_stream_test.c -Wall -g3 -lm -lsodium -lpthread -o tests.o ../../simulated_input.o
 	./src/tests/tests.o
 
 debug:
@@ -12,3 +10,14 @@ debug:
 
 graphs:
 	python3 ./src/analysis/analize_correct_keys.py
+
+all_tests:
+	gcc ./src/tests/datasets.c -g3 -lm -lsodium  -o datasets.o ./src/tests/final.o  simulated_input.o
+	./datasets.o
+
+FP:
+	cd src/tests && gcc false_positives.c -Wall -g3 -lm -lsodium -o fp.o ../../simulated_input.o final.o
+	cd src/tests && ./fp.o
+
+clean:
+	rm ./src/tests/data/*

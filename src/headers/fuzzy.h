@@ -4,6 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
+#include <sodium.h>
 
 
 typedef struct polynomial{
@@ -61,7 +62,7 @@ void free_poly(poly* p);
 void resize_poly(poly* p);
 int deg(poly* p);
 poly* g(int t);
-poly* m_(int n, int k, int t, int bits_start);
+poly* m_(int n, int k, int t, int bits_start, int tracker);
 synd* syndome_calculator_division(poly* C, poly* g, int t);
 poly* euclid_alg(poly* S, int t);
 poly** euclid_alg_rec(poly* a, poly* b, poly* q, poly* r, int t);
@@ -103,6 +104,7 @@ int* create_B(int k, int t, int r, poly* g);
 poly* unlock(int* R, poly* g, poly* p, int k, int t, int r);
 poly* Q_to_poly(int points, int k, int t, int r, int** Q);
 poly* RSDecode(int t, poly* C, poly* C2, poly* g);
+poly* m_random_message(int size);
 
 
 //matrix methods

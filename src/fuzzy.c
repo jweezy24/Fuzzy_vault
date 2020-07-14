@@ -222,7 +222,7 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
     //print_poly(C);
     //printf("\n NEW C(x) = \n");
     //print_poly(C);
-    poly* new = RSDecode(t, C, C2, g);
+    poly* new = RSDecode(t, C, g, 0);
     //if(new == 0) return C;
     return new;
 }
@@ -260,76 +260,76 @@ poly* Q_to_poly(int points_2, int k, int t, int r, int** Q){
     return p;
 }
 
-poly* RSDecode(int t, poly* C, poly* C2, poly* g){
+poly* RSDecode(int t, poly* C, poly* noise, poly* g){
 
-    // // poly* p = gf_div_poly(C, g, 0);
+    // // // poly* p = gf_div_poly(C, g, 0);
 
-    // // poly* p2 = gf_div_poly(C2, g, 0);
+    // // // poly* p2 = gf_div_poly(C2, g, 0);
 
-    poly* div = gf_div_poly(C,g, 0);
-    poly* div2 = gf_div_poly(C2,g, 0);
+    // poly* div = gf_div_poly(C,g, 0);
+    // poly* div2 = gf_div_poly(C2,g, 0);
 
-    // poly* re = gf_div_poly(C, g, 1);
-    // if(re->size > 1 && re->coeffs[0] != 0){
-    //     printf("C = ");
-    //     print_poly(C);
+    // // poly* re = gf_div_poly(C, g, 1);
+    // // if(re->size > 1 && re->coeffs[0] != 0){
+    // //     printf("C = ");
+    // //     print_poly(C);
+    // //     return 0;
+    // // }
+
+    // poly* sum = gf_poly_add(div,div2);
+
+    // int errors = 0;
+    // for(int i = 0; i < sum->size; i++){
+    //     errors+=bin_num(sum->coeffs[i]);
+    // }
+
+    // printf("FOUND %d ERRORS IN MESSAGE\n", errors);
+
+    // poly* corrected = gf_poly_add(sum,div);
+
+    // poly* corrected_p = gf_mult_poly(corrected, g);
+
+    // if(errors > points/2){
     //     return 0;
-    // }
-
-    poly* sum = gf_poly_add(div,div2);
-
-    int errors = 0;
-    for(int i = 0; i < sum->size; i++){
-        errors+=bin_num(sum->coeffs[i]);
-    }
-
-    printf("FOUND %d ERRORS IN MESSAGE\n", errors);
-
-    poly* corrected = gf_poly_add(sum,div);
-
-    poly* corrected_p = gf_mult_poly(corrected, g);
-
-    if(errors > points/2){
-        return 0;
-    }else{
-        return corrected_p;
-    }
-
-    // synd* S = syndome_calculator_division(C,  g, t);
-
-
-    // if( poly_eq(C2, C)){
-    //     return C;
-    // }
-
-    // poly* sig = berlecamp_table(S->p, S->synds);
-
-    // if(sig != 0){
-    //     printf("Sigma = ");
-    //     print_poly(sig);
-
-    //     poly* s_r = sigma_r(sig);
-    //     //printf("Sigma_r = ");
-    //     //print_poly(s_r);
-
-    //     poly* roots = roots_of_poly(s_r,t,NW-1);
-    //     //printf("roots are = ");
-    //     //print_poly(roots);
-
-    //     poly* errors = error_correction(roots,  S->p);
-    //     printf("errors = ");
-    //     print_poly(errors);
-    //     reassemble_message(errors, roots, C);
-    //     printf("Corrected C = ");
-    //     print_poly(C);
-
-    //     //poly* M2 = gf_div_poly(p, g,0);
-
-    //     return C;
     // }else{
-    //     printf("SIG WAS 0\n");
-    //     return C;
+    //     return corrected_p;
     // }
+
+    C = gf_poly_add(C, noise);
+
+    poly* bad = gf_div_poly(C, g, 0);
+    printf("\nPRE FIX = ");
+    print_poly(bad);
+    synd* S = syndome_calculator_division(C, g, t);
+
+
+    poly* sig = berlecamp_table(S->p, S->synds);
+    if(sig != 0){
+        //printf("Sigma = ");
+        //print_poly(sig);
+        poly* s_r = sigma_r(sig);
+        //printf("Sigma_r = ");
+        //print_poly(s_r);
+
+        poly* roots = roots_of_poly(s_r,t,NW-1);
+        //printf("roots are = ");
+        //print_poly(roots);
+
+        poly* errors = error_correction(roots,  S->p);
+       // printf("errors are = ");
+        //print_poly(errors);
+
+        reassemble_message(errors, roots, C);
+    
+
+        poly* M2 = gf_div_poly(C, g, 0);
+        //poly* message = gf_div_poly(C, M2, 0);
+        return M2;
+    }else{
+        printf("SIG WAS 0\n");
+        poly* message = gf_div_poly(C, g, 0);
+        return message;
+    }
 
 }
 
@@ -374,4 +374,12 @@ int cardinality(int x){
         num = gf_mult(num,x);
     }
     return count;
+}
+
+poly* m_random_message(int size){
+    poly* ret = create_poly(size);
+    for(int i = 0; i < size; i++){
+        ret->coeffs[i] = abs(randombytes_random())%256;
+    }
+    return ret;
 }

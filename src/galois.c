@@ -321,23 +321,26 @@ poly* g(int t){
 }
 
 
-poly* m_(int n, int k, int t, int bits_start){
-    poly* M = create_poly(k);
+poly* m_(int n, int k, int t, int bits_start, int tracker){
+    poly* M = create_poly(n);
     char* tmp = malloc(sizeof(char)*pow_2);
     int pos_holder = 0;
-    int bits_pos = pow_2*bits_start;
+    int bits_pos = k*bits_start;
     int count = 0;
 
 
-    for(int i =0; i <= k*pow_2; i++){
-        if(count%pow_2 == 0 && count > 0){
+    for(int i =0; i <= n*k; i++){
+        if(count%k == 0 && count > 0){
             unsigned int tmp_h = (unsigned int)str_int(tmp);
             M->coeffs[pos_holder] = tmp_h;
             pos_holder++;
             count = 0;
             i--;
-            stream_count_layers[0]+=1;
-            stream_count_layers[1]+=1; 
+            if(tracker == 0) {
+                stream_count_layers[0]+=1;
+            }else {
+                stream_count_layers[1]+=1;
+            } 
         }else{
             tmp[count] = bits[bits_pos];
             count+=1;
