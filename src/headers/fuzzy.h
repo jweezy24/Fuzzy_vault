@@ -23,8 +23,8 @@ long p = pow(2,8);
 unsigned int NW = 1 << 8;
 unsigned int *gflog, *gfilog;
 int points =0;
-int stream_count = 0;
 int stream_count_layers[2] = {0,0};
+int stream_count = 0;
 int percent = 0;
 
 //4 Bit
@@ -58,7 +58,6 @@ poly* gf_poly_add(poly* a, poly* b);
 poly* gf_mult_poly(poly* a, poly* b);
 poly* dup_poly(poly* a);
 poly* gf_div_poly(poly* a, poly* b, int remainder);
-void free_poly(poly* p);
 void resize_poly(poly* p);
 int deg(poly* p);
 poly* g(int t);
@@ -74,6 +73,8 @@ poly* inverse_poly(poly* p);
 poly* error_correction(poly* roots, poly* S);
 void reassemble_message(poly* errors, poly* locations, poly* M);
 int poly_eq(poly* p1, poly* p2);
+void free_poly(poly* p);
+void free_synd(synd* p);
 
 
 //field math

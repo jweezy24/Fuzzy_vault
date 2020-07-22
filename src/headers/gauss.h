@@ -18,3 +18,4 @@ void check_for_defined_variables(mat* matrix, int* vars);
 poly* translate_zeros (mat* matrix);
 void print_matrix(mat* matrix);
 mat* create_matrix(int rows, int cols);
+void free_matrix(mat* matrix);

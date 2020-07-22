@@ -15,6 +15,11 @@ poly* create_poly(int size){
     return p;
 }
 
+void free_synd(synd* p){
+    free_poly(p->p);
+    free(p);
+}
+
 
 poly* dup_poly(poly* a){
     poly* ret = malloc(sizeof(poly));
@@ -116,10 +121,12 @@ int gf_mult(int a, int b){
     int sum_log;
 
     if(a == 0 || b == 0) return 0;
+    if(a >= p || b >= p) return 0;
     sum_log = (int)gflog[a] + (int)gflog[b];
     if(sum_log >= NW-1){
         //printf("%d\n", sum_log); 
         sum_log -= NW-1;
+        if(sum_log >= p) return 0;
     }
     //printf("%d\n", sum_log);
     return gfilog[sum_log];
@@ -405,8 +412,8 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
     poly* s = gf_div_poly(C, g,1);
     poly* S = create_poly(2*t);
     synd* sy = malloc(sizeof(synd));
-    printf("s = ");
-    print_poly(s);
+    // printf("s = ");
+    // print_poly(s);
     int iter = 1;
     sy->p = S;
     sy->synds = 0;
@@ -511,7 +518,7 @@ poly* berlecamp_table(poly* S, int t){
     for(n = 0; n < t; n++){
         d = S->coeffs[n];
         for(int i =1; i <= L; i++){
-    
+
             d ^= gf_mult(C->coeffs[i], S->coeffs[n-i]);
         }
         
@@ -531,7 +538,6 @@ poly* berlecamp_table(poly* S, int t){
             B = T;
             b = d;
             m = 1;
-
         }else{
             int coeff = gf_mult(d,gf_inverse(b));;
             poly* tmp = create_poly(m+1);
@@ -541,8 +547,6 @@ poly* berlecamp_table(poly* S, int t){
         }
         
     }
-
-    //printf("L = %d\n", L);
 
     if(L == 0){
         return 0;
@@ -578,6 +582,8 @@ poly* error_correction(poly* roots, poly* S){
         }
         matrix->matrix[i] = tmp;    
     }
+
+    //print_matrix(matrix);
     
     poly* errors = gauss_elim(matrix);
     

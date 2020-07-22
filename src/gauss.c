@@ -4,15 +4,25 @@ poly* gauss_elim(mat* matrix){
     int* variables = malloc(sizeof(int)*matrix->cols-1);
     int start_row = determine_left_most_col(matrix);
     check_for_defined_variables(matrix, variables);
+    //print_matrix(matrix);
     if (start_row != 0){
         row_swap(matrix, 0, start_row);
     }
     row_echelon(matrix);
     //print_matrix(matrix);
     poly* p = translate_zeros(matrix);
+    free(variables);
+    free_matrix(matrix);
     //print_poly(p);
     return p;
 
+}
+
+void free_matrix(mat* matrix){
+    for(int i = 0; i < matrix->cols; i++){
+        free(matrix->matrix[i]);
+    }
+    free(matrix);
 }
 
 mat* create_matrix(int rows, int cols){
@@ -116,27 +126,48 @@ void check_for_defined_variables(mat* matrix, int* vars){
     int coeff = 0;
     int S_i = 0;
 
-
-    for(int i = 0; i < matrix->rows; i++){
-        non_zero_count = 0;
-        for(int j = 0; j < matrix->cols-1; j++){
-            if(matrix->matrix[i][j] != 0){
-                non_zero_count +=1;
-                tmp_pos = j;
-                coeff = matrix->matrix[i][j];
-                S_i = matrix->matrix[i][matrix->cols-1];
-                coeff = gf_div(S_i, coeff);
+    if(matrix->cols == 2){
+        int a = 0;
+        int b = 0;
+        for(int i = 0; i < matrix->rows; i++){
+            if(i == 0){
+                a=matrix->matrix[i][0];
+                b=matrix->matrix[i][1];
+                int tmp = gf_inverse(gf_div(a,b));
+                matrix->matrix[i][0] = 1;
+                matrix->matrix[i][1] = tmp;  
+            }else{
+                matrix->matrix[i][0] = 0;
+                matrix->matrix[i][1] = 0;  
             }
         }
-        if(non_zero_count == 1){
-            vars[i] = coeff;
-            for(int j = 0; j < matrix->rows; j++){
-                int tmp_val = gf_mult(matrix->matrix[j][tmp_pos], coeff);
-                matrix->matrix[j][tmp_pos] = 0;
-                matrix->matrix[j][matrix->cols-1] = tmp_val;
-            }   
+        // printf("A=%d\tB=%d\n", a,b);
+        // printf("A/B=%d\n", gf_div(a,b));
+    }else{
+
+
+        for(int i = 0; i < matrix->rows; i++){
+            non_zero_count = 0;
+            for(int j = 0; j < matrix->cols-1; j++){
+                if(matrix->matrix[i][j] != 0){
+                    non_zero_count +=1;
+                    tmp_pos = j;
+                    coeff = matrix->matrix[i][j];
+                    S_i = matrix->matrix[i][matrix->cols-1];
+                    coeff = gf_div(S_i, coeff);
+                }
+            }
+            if(non_zero_count == 1){
+                vars[i] = coeff;
+                for(int j = 0; j < matrix->rows; j++){
+                    int tmp_val = gf_mult(matrix->matrix[j][tmp_pos], coeff);
+                    matrix->matrix[j][tmp_pos] = 0;
+                    matrix->matrix[j][matrix->cols-1] = tmp_val;
+                }   
+            }
         }
     }
+
 }
 
 
@@ -188,6 +219,7 @@ void row_echelon(mat* matrix){
             free(tmp_row2);
 
             //printf("Coeff = %d\n", coeff );
+            //print_matrix(matrix);
         
         }
         //print_matrix(matrix);
@@ -208,17 +240,20 @@ poly* translate_zeros (mat* matrix){
     for(int i=matrix->rows-1; i >= 0; i--){
         int* tmp_row = matrix->matrix[i];
         int S_i = tmp_row[matrix->cols-1];
-        //printf("BEFORE S_I = %d\n", S_i);
+        //printf("BEFORE S_I = %d\n", tmp_row[matrix->cols]);
         
-        if(is_zero_row(matrix, i) == 0){
+        if(is_zero_row(matrix, i) == 0 || (i == 0 && matrix->cols == 2)){
             
             for(int j = errors->size-1; j >= 0; j--){
                 //printf("LOOP S_I = %d\n", S_i);
-                if(errors->coeffs[j] == -1){
+                if(errors->coeffs[j] == -1 && !(i == 0 && matrix->cols == 2)){
                     errors->coeffs[j] = S_i;
                     break;
                 }else if(errors->coeffs[j] != -1){
                     S_i ^= gf_mult(errors->coeffs[j], tmp_row[j]);
+                }else if(errors->coeffs[j] == -1 && (i == 0 && matrix->cols == 2)){
+                    errors->coeffs[j] = matrix->matrix[0][1];
+                    break;
                 }
             }
             

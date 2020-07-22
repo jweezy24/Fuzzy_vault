@@ -297,36 +297,39 @@ poly* RSDecode(int t, poly* C, poly* noise, poly* g){
 
     C = gf_poly_add(C, noise);
 
-    poly* bad = gf_div_poly(C, g, 0);
-    printf("\nPRE FIX = ");
-    print_poly(bad);
+    //printf("\nPRE FIX = ");
+    //print_poly(bad);
     synd* S = syndome_calculator_division(C, g, t);
-
+    //printf("PAST THE S DEF\n");
 
     poly* sig = berlecamp_table(S->p, S->synds);
     if(sig != 0){
-        //printf("Sigma = ");
-        //print_poly(sig);
+        // printf("Sigma = ");
+        // print_poly(sig);
         poly* s_r = sigma_r(sig);
-        //printf("Sigma_r = ");
-        //print_poly(s_r);
+        // printf("Sigma_r = ");
+        // print_poly(s_r);
 
         poly* roots = roots_of_poly(s_r,t,NW-1);
-        //printf("roots are = ");
-        //print_poly(roots);
+        // printf("roots are = ");
+        // print_poly(roots);
 
         poly* errors = error_correction(roots,  S->p);
-       // printf("errors are = ");
-        //print_poly(errors);
+        // printf("errors are = ");
+        // print_poly(errors);
 
         reassemble_message(errors, roots, C);
     
 
         poly* M2 = gf_div_poly(C, g, 0);
+        free_poly(sig);
+        free_synd(S);
+        free_poly(roots);
+        free_poly(errors);
         //poly* message = gf_div_poly(C, M2, 0);
         return M2;
     }else{
-        printf("SIG WAS 0\n");
+        //printf("SIG WAS 0\n");
         poly* message = gf_div_poly(C, g, 0);
         return message;
     }
