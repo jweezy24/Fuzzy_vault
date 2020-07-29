@@ -5,8 +5,12 @@ fuzzy:
 	cd src/tests && gcc full_stream_test.c -Wall -g3 -lm -lsodium -lpthread -o tests.o ../../simulated_input.o
 	./src/tests/tests.o
 
+onion:
+	cd src_onion/tests && gcc full_stream_test.c -Wall -g3 -lm -lsodium -lpthread -o tests.o ../../simulated_input.o
+	./src_onion/tests/tests.o
+
 debug:
-	gdb ./src/tests/tests.o
+	gdb ./src_onion/tests/tests.o
 
 graphs:
 	python3 ./src/analysis/analize_correct_keys.py
@@ -26,3 +30,6 @@ clean:
 
 kill_all:
 	kill -9 $(ps -aux | grep datasets | awk '{print $2}') 
+
+hamming:
+	python3 ./src/tests/hamming_distance_alg.py

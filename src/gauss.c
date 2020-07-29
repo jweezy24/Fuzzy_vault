@@ -12,7 +12,7 @@ poly* gauss_elim(mat* matrix){
     //print_matrix(matrix);
     poly* p = translate_zeros(matrix);
     free(variables);
-    free_matrix(matrix);
+    //free_matrix(matrix);
     //print_poly(p);
     return p;
 

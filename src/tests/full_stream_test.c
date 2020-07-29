@@ -3,15 +3,24 @@
 
 int main(){
     setup_tables();
-    int n = 100;
-    int k = 25;
-    int t = (n-k)/2;
-    int r = 50;
-    char* file_path = "./src/tests/data/results_noise.txt";
+    int n = start_size;
+    int k = start_message;
+    //int t = ((n-k)/2);
+    int t = ((n-k)/2);
+    int r = 128;
+    char* file_path = "./src/tests/data/results_noise_burst.txt";
+    poly** g_s = malloc(sizeof(poly*)*8);
+    poly** noise_good = malloc(sizeof(poly*)*8);
+    poly** noise_bad = malloc(sizeof(poly*)*8);
 
-    for(int n_size = 5; n_size < 9; n_size++){
-        for(int per = 0; per <= 100; per++){
 
+    for(int n_size = 1; n_size < pow_2+1; n_size++){
+        for(int per = 1; per <= 100; per++){
+
+            poly* n_1;
+            poly* n_2;
+            
+            poly* g_x = g(t);
             percent = per;
             int noise_size = n_size;
             int count_c = 0;
@@ -28,46 +37,62 @@ int main(){
                 resize_poly(n_1);
                 resize_poly(n_2);            
                 poly* M = m_random_message(k);
-                
+                poly* C2;
+
+                C2 = gf_mult_poly(M, g_x);
+
                 int errors = 0;
 
-
-                poly* C2 = gf_mult_poly(M,g_x);
+                //FUZZY VAULT
+                //poly* C2 = gf_mult_poly(n_1,g_x);
                 
+                //OURS
+                //poly* C2 = gf_mult_poly(M, g_s[7]);
 
-                points = 100;
-
+                points = 128;
+                
                 for(int l = 0; l < n_2->size; l++){
                     //5% chance of error
                     //printf("%d\n", rand());
-                    for(int j = 0; j < noise_size; j++){
-                        int tmp_num = abs(randombytes_random())%100;
-                        //printf("Random = %d\n", tmp_num);
-                        if( tmp_num >= 100-percent){
-                            unsigned int val = (int)pow(2,j);
-                            //bin(val);
-                            //printf("\n");
-                            n_2->coeffs[l] = (unsigned int)n_2->coeffs[l] ^ val;
-                            //printf("ERROR PUT IN COEFF %d ERROR OFF BY %d\n", l, val); 
-                            errors+=bin_num(val);
-                            //printf("Errors = %d\n", errors);
-                            
-                        }
+                    //for(int j = 0; j < noise_size; j++){
+                    int tmp_num = abs(randombytes_random())%100;
+                    //printf("Random = %d\n", tmp_num);
+                    if( tmp_num >= 100-percent){
+                        unsigned int val = abs(randombytes_random())%256;
+                        //bin(val);
+                        //printf("\n");
+                        n_2->coeffs[l] = (unsigned int)n_2->coeffs[l] ^ val;
+                        //printf("ERROR PUT IN LAYER %d ERROR AT %d WITH VAL %u\n", layer, l, val); 
+                        errors+=1;
+                        //printf("Errors = %d\n", errors);
+                        
                     }
+                    //}
                 }
 
-                poly* C = gf_poly_add(C2, n_2);
+                //FUZZY VAULT
+                //poly* C = gf_mult_poly(g_x, n_2);
+                
+                poly* C;
+                C = gf_mult_poly(M, g_x);
+                C = gf_poly_add(C, n_2);
+
+                printf("C = ");
+                print_poly(C);
 
 
 
                 //int* R = lock(k,t,r,C);
 
                 //printf("THERE ARE %d BIT ERRORS\n", errors);
+                
+                //FUZZY VAULT DECODING
+                //poly* res =  unlock(R, g_x, C2, k, t, r);
 
 
                 poly*  res = RSDecode(t, C, n_1, g_x);
                 if(res == 0){
-                    //printf("***************FAILURE****************\n"); 
+                    printf("***************FAILURE****************\n"); 
                     // printf("\nC = ");
                     // print_poly(C);
                     // printf("\nCorrected Poly = 0\n");
@@ -85,13 +110,13 @@ int main(){
 
                 int correct = poly_eq(M, res);
                     if(correct) {
-                        //printf("***************CORRECT****************\n");
+                        printf("***************CORRECT****************\n");
                         // printf("C = ");
                         // print_poly(C); 
-                        // printf("\nn_1 = ");
-                        // print_poly(n_1);
-                        // printf("\nn_2 = ");
-                        // print_poly(n_2);
+                        // // printf("\nn_1 = ");
+                        // // print_poly(n_1);
+                        // // printf("\nn_2 = ");
+                        // // print_poly(n_2);
                         // printf("\nCorrected Poly = ");
                         // print_poly(res);
                         // printf("\nMessage = ");
@@ -99,34 +124,36 @@ int main(){
                         //exit(1);
                     }else{
                         count_c +=1; 
-                        //printf("***************FAILURE****************\n");
-                        // printf("C = ");
-                        // print_poly(C);
+                        printf("***************FAILURE****************\n");
+                        // printf("G = ");
+                        // print_poly(g_x);
                         // printf("C2 = ");
                         // print_poly(C2);
-                        // printf("\nn_1 = ");
-                        // print_poly(n_1);
-                        // printf("\nn_2 = ");
-                        // print_poly(n_2);
+                        // printf("C = ");
+                        // print_poly(C);
+                        // // printf("\nn_1 = ");
+                        // // print_poly(n_1);
+                        // // printf("\nn_2 = ");
+                        // // print_poly(n_2);
                         // printf("\nCorrected Poly = ");
                         // print_poly(res);
                         // printf("\nMessage = ");
-                        // print_poly(M); /*exit(1);*/
+                        // print_poly(M); 
+                        // printf("THERE ARE %d BIT ERRORS\n", errors);
+                        // printf("Stream_count A = %d\n", stream_count_layers[0]);
+                        // printf("Stream_count B = %d\n", stream_count_layers[1]);/*exit(1);*/
                     
-                        //exit(1);
+                        // exit(1);
                     }
                 }
-                //printf("Stream_count A = %d\n", stream_count_layers[0]);
-                //printf("Stream_count B = %d\n", stream_count_layers[1]);
                 if(stream_count_layers[0] > stream_count_layers[1]) stream_count_layers[1] = stream_count_layers[0];
                 if(stream_count_layers[1] >= stream_count_layers[0]) stream_count_layers[0] = stream_count_layers[1];
-                free_poly(n_1);
-                free_poly(n_2);
+                //free_poly(n_1);
+                //free_poly(n_2);
                 free_poly(M);
                 free_poly(C);
                 free_poly(C2);
-                free_poly(res);
-                free_poly(g_x);
+                if(res != 0) free_poly(res);
             }
 
             //log_st("");
@@ -138,6 +165,7 @@ int main(){
             free(number->buf);
             free(number2->buf);
             free(frac->buf);
+            free_poly(g_x);
 
             free(number);
             free(number2);

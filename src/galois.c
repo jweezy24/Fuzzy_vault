@@ -327,6 +327,28 @@ poly* g(int t){
     return tmp_1;
 }
 
+poly* g_2(int t, int generator){
+
+        
+    poly* tmp_1 = create_poly(2);
+    tmp_1->coeffs[0] = generator;
+    tmp_1->coeffs[1] = 1;
+    for(int i = 2; i <= 2*t; i++){
+        poly* tmp_2 = create_poly(2);
+        tmp_2->coeffs[0] = gf_pow(generator, i);
+        tmp_2->coeffs[1] = 1;
+        poly* holder = gf_mult_poly(tmp_1, tmp_2);
+        free(tmp_1);
+        tmp_1 = create_poly(holder->size);
+        for(int j =0; j < holder->size; j++){
+            tmp_1->coeffs[j] = holder->coeffs[j];
+        }
+        free(tmp_2);
+    }
+    //printf("%d\n", size);
+    return tmp_1;
+}
+
 
 poly* m_(int n, int k, int t, int bits_start, int tracker){
     poly* M = create_poly(n);
@@ -398,8 +420,10 @@ unsigned int str_int(char* str){
     for (int i =0; i <= size; i++){
         if(str[i] == '0'){
             tmp_num = 0;
-        }else{
+        }else if(str[i] == '1'){
             tmp_num = 1;
+        }else{
+            tmp_num = 0;
         }
         num += (unsigned int)tmp_num*((int)pow(2, size-(i)));   
     }
@@ -668,4 +692,14 @@ int gf_inverse(int num){
 
     return 0;
 
+}
+
+poly* copy_poly(poly* p1){
+    poly* ret = malloc(sizeof(poly));
+    ret->size = p1->size;
+    ret->coeffs = malloc(sizeof(int)*p1->size);
+    for(int i = 0; i < p1->size; i++){
+        ret->coeffs[i] = p1->coeffs[i];
+    }
+    return ret;
 }

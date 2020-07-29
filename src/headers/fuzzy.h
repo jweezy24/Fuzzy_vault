@@ -19,21 +19,34 @@ typedef struct syndrome{
 
 
 int pow_2 = 8;
-long p = pow(2,8);
+int p = pow(2, 8);
 unsigned int NW = 1 << 8;
 unsigned int *gflog, *gfilog;
 int points =0;
+int step = 0;
 int stream_count_layers[2] = {0,0};
 int stream_count = 0;
 int percent = 0;
+int alphas[8] = {0b10011101, 0b11100101, 0b11110111,  0b11010101, 0b11001011, 0b10111111,  0b10001111, 0b10001001};
+int start_size = 128;
+int start_message = 8;
 
 //4 Bit
-// unsigned int prim_poly = (unsigned int) 0b10011;
-// int generator = (unsigned int)0b1011;
+//unsigned int prim_poly = (unsigned int) 0b10011;
+//int generator = (unsigned int)0b1011;
+
+//6 Bit
+// unsigned int prim_poly = (unsigned int) 0b1000011;
+// int generator = (unsigned int)0b100101;
 
 //8 Bit
 unsigned int prim_poly = (unsigned int) 0b100011101;
 int generator = (unsigned int)0b10000011;
+
+//10 Bit
+// unsigned int prim_poly = (unsigned int) 0b10000001001;
+// int generator = (unsigned int)0b1000010001;
+
 
 //16 bit 
 // unsigned int prim_poly = (unsigned int) 0b10000001111011101;
@@ -75,6 +88,8 @@ void reassemble_message(poly* errors, poly* locations, poly* M);
 int poly_eq(poly* p1, poly* p2);
 void free_poly(poly* p);
 void free_synd(synd* p);
+poly* copy_poly(poly* p1);
+poly* g_2(int t, int generator);
 
 
 //field math

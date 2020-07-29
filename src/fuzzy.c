@@ -18,14 +18,14 @@ int* lock(int k, int t, int r, poly* p){
     int rotation = 0;
     int raised = 1;
     
-    printf("Stream_count Start1 = %d\n", stream_count_layers[1]);
+    //printf("Stream_count Start1 = %d\n", stream_count_layers[1]);
     stream_count_layers[1] = stream_count_layers[0];
     int range[3] = {0,0,0};
     int stream_count = stream_count_layers[0];
     int zeros = 0;
     
-    for(int i = 0; i < NW;){
-        int x = sequence_of_bits(stream_count,percent);
+    for(int i = 0; i < NW; ){
+        int x = gf_pow(generator, 75+i);
         //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,percent));
         //int card = cardinality(x);
         int num = x;
@@ -35,20 +35,27 @@ int* lock(int k, int t, int r, poly* p){
         int y = eval_poly(p, num);
         //printf("in_range = %d\n", in_range);
         //printf("NUM = %d\n", num);
-        if (num != -1 && R[num] == -1 && X[num] == 0){ //&& card >= points){
+        int rand_val = abs(randombytes_random())%NW;
+        if (num != -1 && R[num] == -1 && X[num] == 0 && i < points){ //&& card >= points){
             //int in_range = check_range(range, num);
             //if(in_range){
+                //printf("NUM = %d\n", num);
+                //printf("y = %d\n", y);
                 X[num] = 1;
                 R[num] = y;
                 i++;
             //}
+        }else if( i >= r && X[rand_val] == 0){
+            R[rand_val] = abs(randombytes_random())%NW;
+            X[rand_val] = 1;
+            i++;
         }
-        raised +=1;
-        rotation+=1;
+        // raised +=1;
+        // rotation+=1;
         stream_count+=1;
     }
     stream_count_layers[0] = stream_count;
-    printf("Stream_count END1 = %d\n", stream_count_layers[0]);
+    //printf("Stream_count END1 = %d\n", stream_count_layers[0]);
 
     int len = points;
     int check = 1;
@@ -92,40 +99,37 @@ int* create_B(int k, int t, int r, poly* p){
     
     int stream_count = stream_count_layers[1];
 
-    printf("Stream_count Start2 = %d\n", stream_count_layers[1]);
+    //printf("Stream_count Start2 = %d\n", points);
 
     int range[3] = {0,0,0};
     int zeros = 0;
 
-    for(int i = 0; i < NW-2;){
-        int x = sequence_of_bits(stream_count,0);
-        //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,0));
+    for(int i = 0; i < points;  i++){
+        int x = gf_pow(generator, 75+i);
+        //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,percent));
         //int card = cardinality(x);
         int num = x;
         //printf("Cardinality of %d = %d\n", x, card);
         //int num = gf_pow(generator, raised%NW);
         //int num = gf_pow(generator, i);
-        int y = eval_poly(p, x);
-        //printf("Cardinality of %d = %d\n", x, card);
-
-        if (num != -1 && R[num] == -1 && X[num] == 0){
-            int in_range = check_range(range, num);
-            if(in_range){
+        int y = eval_poly(p, num);
+        //printf("in_range = %d\n", in_range);
+        //printf("NUM = %d\n", num);
+        int rand_val = abs(randombytes_random())%NW;
+        if (num != -1 && R[num] == -1 && X[num] == 0){ //&& card >= points){
+            //int in_range = check_range(range, num);
+            //if(in_range){
                 X[num] = 1;
                 R[num] = y;
-                i++;
-            }
+            //}
         }
-        //printf("Num=%d\n", num);
-        raised+=1;
-        rotation+=1;
         stream_count+=1;
 
     }
 
     stream_count_layers[1] = stream_count;
-    printf("Stream_count END2 = %d\n", stream_count_layers[1]);
-    printf("Range = %d\t %d\t %d\n", range[0], range[1], range[2]);
+    //printf("Stream_count END2 = %d\n", stream_count_layers[1]);
+    //printf("Range = %d\t %d\t %d\n", range[0], range[1], range[2]);
 
     return R;
 
@@ -188,7 +192,7 @@ int is_close(int a, int b){
     }
     if(a > b) {max = a; min = b;}
     if(a <= b) {max = b; min = a;}
-    printf("a/b=%f\n", (float)min/(float)max);
+    //printf("a/b=%f\n", (float)min/(float)max);
     if( (float)min/(float)max > .8){
         return 1;
     }else{
@@ -206,9 +210,9 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
         int* tmp_row = malloc(sizeof(int)*2);
         tmp_row[0] = i;
         // for(int j = 0; j < points; j++){
-        if(B[i] != -1 && is_close(R[i],B[i])){
-            ///*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
-            tmp_row[1] = R[i];
+        if(B[i] != -1 && (is_close(R[i],B[i]) || R[i] == B[i] ) ){
+           // /*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
+            tmp_row[1] = B[i];
             Q[q_size] = tmp_row;
             q_size+=1;
         }
@@ -220,9 +224,11 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
     poly* C = Q_to_poly(q_size, k, t,r,Q);
     if(C==0) return 0;
     //print_poly(C);
-    //printf("\n NEW C(x) = \n");
-    //print_poly(C);
-    poly* new = RSDecode(t, C, g, 0);
+    // printf("\n NEW C(x) = \n");
+    // print_poly(C);
+    //if(poly_eq(C,C2)) return C;
+    poly* new = 0; 
+    //RSDecode(t, C, 0, g);
     //if(new == 0) return C;
     return new;
 }
@@ -231,8 +237,7 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
 poly* Q_to_poly(int points_2, int k, int t, int r, int** Q){
     
     mat* matrix =0;
-    printf("Inside dis funct big boy.\n");
-    if(points_2 >= points){
+    if(points_2 >= NW/2){
         matrix = create_matrix(points, points+1);
     }else{
         printf("NOT ENOUGH POINTS TO RECREATE MESSAGE.\n");
@@ -298,7 +303,7 @@ poly* RSDecode(int t, poly* C, poly* noise, poly* g){
     C = gf_poly_add(C, noise);
 
     //printf("\nPRE FIX = ");
-    //print_poly(bad);
+    //print_poly(C);
     synd* S = syndome_calculator_division(C, g, t);
     //printf("PAST THE S DEF\n");
 
@@ -322,6 +327,7 @@ poly* RSDecode(int t, poly* C, poly* noise, poly* g){
     
 
         poly* M2 = gf_div_poly(C, g, 0);
+        
         free_poly(sig);
         free_synd(S);
         free_poly(roots);
@@ -382,7 +388,7 @@ int cardinality(int x){
 poly* m_random_message(int size){
     poly* ret = create_poly(size);
     for(int i = 0; i < size; i++){
-        ret->coeffs[i] = abs(randombytes_random())%256;
+        ret->coeffs[i] = abs(randombytes_random())%p;
     }
     return ret;
 }
