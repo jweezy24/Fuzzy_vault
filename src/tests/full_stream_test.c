@@ -8,170 +8,182 @@ int main(){
     //int t = ((n-k)/2);
     int t = ((n-k)/2);
     int r = 128;
-    char* file_path = "./src/tests/data/results_noise_burst.txt";
+    int m_sizes[7] = {15, 30, 45, 100, 128, 150, 200};
+    char* file_path = "./src/tests/data/results_noise_OAP.txt";
     poly** g_s = malloc(sizeof(poly*)*8);
     poly** noise_good = malloc(sizeof(poly*)*8);
     poly** noise_bad = malloc(sizeof(poly*)*8);
+    double time_spent;
+    extern char vk1[];
+    extern char vk2[];
 
 
-    for(int n_size = 1; n_size < pow_2+1; n_size++){
-        for(int per = 1; per <= 100; per++){
+    for(int n_size = 1; n_size < 9; n_size++){
+        for(int M_Size = 0; M_Size < 7; M_Size++){
+            n = m_sizes[M_Size];
+            k = 8;
+            t = ((n-k)/2);
+            //for(int per = 0; per <= 100; per++){
 
-            poly* n_1;
-            poly* n_2;
-            
-            poly* g_x = g(t);
-            percent = per;
-            int noise_size = n_size;
-            int count_c = 0;
-            //int streams = (int)(29478361/(n*noise_size));
-            int streams = (int)(1000);
-            stream_count_layers[0] = 0;
-            stream_count_layers[1] = 0;
+                clock_t begin = clock();
 
-            for(int i = 0; i< streams; i++){
-
+                poly* n_1;
+                poly* n_2;
+                
                 poly* g_x = g(t);
-                poly* n_1 = m_(n, noise_size, t, stream_count_layers[0], 0);
-                poly* n_2 = m_(n, noise_size, t, stream_count_layers[1], 1);
-                resize_poly(n_1);
-                resize_poly(n_2);            
-                poly* M = m_random_message(k);
-                poly* C2;
+                //percent = per;
+                int noise_size = n_size;
+                int count_c = 0;
+                //int streams = (int)(29478361/(n*noise_size));
+                int len = 554240;
+                int streams = (int)(len/(n*noise_size));
+                stream_count_layers[0] = 0;
+                stream_count_layers[1] = 0;
 
-                C2 = gf_mult_poly(M, g_x);
+                for(int i = 0; i< streams; i++){
 
-                int errors = 0;
+                    poly* g_x = g(t);
+                    poly* n_1 = m_arbitrary(n, noise_size, t, stream_count_layers, vk1, 0);
+                    poly* n_2 = m_arbitrary(n, noise_size, t, stream_count_layers, vk2, 1);
+                    resize_poly(n_1);
+                    resize_poly(n_2);            
+                    poly* M = m_random_message(k);
 
-                //FUZZY VAULT
-                //poly* C2 = gf_mult_poly(n_1,g_x);
-                
-                //OURS
-                //poly* C2 = gf_mult_poly(M, g_s[7]);
+                    int errors = 0;
 
-                points = 128;
-                
-                for(int l = 0; l < n_2->size; l++){
-                    //5% chance of error
-                    //printf("%d\n", rand());
-                    //for(int j = 0; j < noise_size; j++){
-                    int tmp_num = abs(randombytes_random())%100;
-                    //printf("Random = %d\n", tmp_num);
-                    if( tmp_num >= 100-percent){
-                        unsigned int val = abs(randombytes_random())%256;
-                        //bin(val);
-                        //printf("\n");
-                        n_2->coeffs[l] = (unsigned int)n_2->coeffs[l] ^ val;
-                        //printf("ERROR PUT IN LAYER %d ERROR AT %d WITH VAL %u\n", layer, l, val); 
-                        errors+=1;
-                        //printf("Errors = %d\n", errors);
-                        
-                    }
-                    //}
-                }
+                    //FUZZY VAULT
+                    //poly* C2 = gf_mult_poly(n_1,g_x);
+                    
+                    //OURS
+                    poly* C2 = gf_mult_poly(M, g_x);
 
-                //FUZZY VAULT
-                //poly* C = gf_mult_poly(g_x, n_2);
-                
-                poly* C;
-                C = gf_mult_poly(M, g_x);
-                C = gf_poly_add(C, n_2);
+                    points = n;
+                    
+                    // for(int l = 0; l < n_2->size; l++){
+                    //     //5% chance of error
+                    //     //printf("%d\n", rand());
+                    //     //for(int j = 0; j < noise_size; j++){
+                    //     int tmp_num = abs(randombytes_random())%100;
+                    //     //printf("Random = %d\n", tmp_num);
+                    //     if( tmp_num >= 100-percent){
+                    //         unsigned int val = abs(randombytes_random())%256;
+                    //         //bin(val);
+                    //         //printf("\n");
+                    //         n_2->coeffs[l] = (unsigned int)n_2->coeffs[l] ^ val;
+                    //         //printf("ERROR PUT IN LAYER %d ERROR AT %d WITH VAL %u\n", layer, l, val); 
+                    //         errors+=1;
+                    //         //printf("Errors = %d\n", errors);
+                            
+                    //     }
+                    //     //}
+                    // }
 
-                printf("C = ");
-                print_poly(C);
+                    //FUZZY VAULT
+                    //poly* C = gf_mult_poly(g_x, n_2);
+                    
+                    //Our Algorithm
+                    poly* C;
+                    C = gf_mult_poly(M, g_x);
+                    C = gf_poly_add(C, n_2);
 
-
-
-                //int* R = lock(k,t,r,C);
-
-                //printf("THERE ARE %d BIT ERRORS\n", errors);
-                
-                //FUZZY VAULT DECODING
-                //poly* res =  unlock(R, g_x, C2, k, t, r);
+                    //printf("C = ");
+                    //print_poly(C);
 
 
-                poly*  res = RSDecode(t, C, n_1, g_x);
-                if(res == 0){
-                    printf("***************FAILURE****************\n"); 
+
+                    //int* R = lock(k,t,r,C);
+
+                    //printf("THERE ARE %d BIT ERRORS\n", errors);
+                    
+                    //FUZZY VAULT DECODING
+                    //poly* res =  unlock(R, g_x, C2, k, t, r);
+
+                    //ALGORITHM DECODING
+                    poly*  res = RSDecode(t, C, n_1, g_x);
+                    if(res == 0){
+                        printf("***************FAILURE****************\n"); 
+                        // printf("\nC = ");
+                        // print_poly(C);
+                        // printf("\nCorrected Poly = 0\n");
+                        // printf("\nC2 = ");
+                        // print_poly(C2);
+                        // exit(0);
+                        count_c+=1;
+                    }else{
                     // printf("\nC = ");
                     // print_poly(C);
-                    // printf("\nCorrected Poly = 0\n");
+                    // printf("\nCorrected Poly = ");
+                    // print_poly(res);
                     // printf("\nC2 = ");
                     // print_poly(C2);
-                    // exit(0);
-                    count_c+=1;
-                }else{
-                // printf("\nC = ");
-                // print_poly(C);
-                // printf("\nCorrected Poly = ");
-                // print_poly(res);
-                // printf("\nC2 = ");
-                // print_poly(C2);
 
-                int correct = poly_eq(M, res);
-                    if(correct) {
-                        printf("***************CORRECT****************\n");
-                        // printf("C = ");
-                        // print_poly(C); 
-                        // // printf("\nn_1 = ");
-                        // // print_poly(n_1);
-                        // // printf("\nn_2 = ");
-                        // // print_poly(n_2);
-                        // printf("\nCorrected Poly = ");
-                        // print_poly(res);
-                        // printf("\nMessage = ");
-                        // print_poly(M); 
-                        //exit(1);
-                    }else{
-                        count_c +=1; 
-                        printf("***************FAILURE****************\n");
-                        // printf("G = ");
-                        // print_poly(g_x);
-                        // printf("C2 = ");
-                        // print_poly(C2);
-                        // printf("C = ");
-                        // print_poly(C);
-                        // // printf("\nn_1 = ");
-                        // // print_poly(n_1);
-                        // // printf("\nn_2 = ");
-                        // // print_poly(n_2);
-                        // printf("\nCorrected Poly = ");
-                        // print_poly(res);
-                        // printf("\nMessage = ");
-                        // print_poly(M); 
-                        // printf("THERE ARE %d BIT ERRORS\n", errors);
-                        // printf("Stream_count A = %d\n", stream_count_layers[0]);
-                        // printf("Stream_count B = %d\n", stream_count_layers[1]);/*exit(1);*/
-                    
-                        // exit(1);
+                    int correct = poly_eq(M, res);
+                        if(correct) {
+                            printf("***************CORRECT****************\n");
+                            // printf("C = ");
+                            // print_poly(C); 
+                            // // printf("\nn_1 = ");
+                            // // print_poly(n_1);
+                            // // printf("\nn_2 = ");
+                            // // print_poly(n_2);
+                            // printf("\nCorrected Poly = ");
+                            // print_poly(res);
+                            // printf("\nMessage = ");
+                            // print_poly(M); 
+                            //exit(1);
+                        }else{
+                            count_c +=1; 
+                            printf("***************FAILURE****************\n");
+                            // printf("G = ");
+                            // print_poly(g_x);
+                            // printf("C2 = ");
+                            // print_poly(C2);
+                            // printf("C = ");
+                            // print_poly(C);
+                            // // printf("\nn_1 = ");
+                            // // print_poly(n_1);
+                            // // printf("\nn_2 = ");
+                            // // print_poly(n_2);
+                            // printf("\nCorrected Poly = ");
+                            // print_poly(res);
+                            // printf("\nMessage = ");
+                            // print_poly(M); 
+                            // printf("THERE ARE %d BIT ERRORS\n", errors);
+                            // printf("Stream_count A = %d\n", stream_count_layers[0]);
+                            // printf("Stream_count B = %d\n", stream_count_layers[1]);/*exit(1);*/
+                        
+                            // exit(1);
+                        }
                     }
+                    if(stream_count_layers[0] > stream_count_layers[1]) stream_count_layers[1] = stream_count_layers[0];
+                    if(stream_count_layers[1] >= stream_count_layers[0]) stream_count_layers[0] = stream_count_layers[1];
+                    free_poly(n_1);
+                    free_poly(n_2);
+                    free_poly(M);
+                    free_poly(C);
+                    free_poly(C2);
+                    if(res != 0) free_poly(res);
+                    clock_t end = clock();
+                    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
                 }
-                if(stream_count_layers[0] > stream_count_layers[1]) stream_count_layers[1] = stream_count_layers[0];
-                if(stream_count_layers[1] >= stream_count_layers[0]) stream_count_layers[0] = stream_count_layers[1];
-                //free_poly(n_1);
-                //free_poly(n_2);
-                free_poly(M);
-                free_poly(C);
-                free_poly(C2);
-                if(res != 0) free_poly(res);
-            }
 
-            //log_st("");
+                //log_st("");
 
-            array_c* number2 = int_to_str(streams);
-            array_c* number = int_to_str(count_c);
-            array_c* frac = make_fraction(number, number2);
-            log_final_line_noise(frac, percent, noise_size, file_path);
-            free(number->buf);
-            free(number2->buf);
-            free(frac->buf);
-            free_poly(g_x);
+                array_c* number2 = int_to_str(streams);
+                array_c* number = int_to_str(count_c);
+                array_c* frac = make_fraction(number, number2);
+                log_final_line_noise(frac, percent, n_size, time_spent, file_path, n, n_size);
+                free(number->buf);
+                free(number2->buf);
+                free(frac->buf);
+                free_poly(g_x);
 
-            free(number);
-            free(number2);
-            free(frac);
-            
+                free(number);
+                free(number2);
+                free(frac);
+                
 
+            //}
         }
     }
     
@@ -203,12 +215,11 @@ void log_final_line(array_c* frac, int percent, char* file_path){
    fclose(fp);
 }
 
-void log_final_line_noise(array_c* frac, int percent, int noise_size, char* file_path){
+void log_final_line_noise(array_c* frac, int percent, int noise, double time, char* file_path, int ms, int key){
     FILE *fp;
 
    fp = fopen(file_path, "a");
-   fprintf(fp, "Ratio\t %s Percent\t %d\t Noise %d\n", frac->buf,percent, noise_size);
-
+   fprintf(fp, "Ratio\t %s Percent\t %d\t Noise %d\t Time %f\t GF %d,%d\n", frac->buf,percent, noise, time,ms,key);
    fclose(fp);
 }
 
@@ -269,4 +280,33 @@ array_c* make_fraction(array_c* num1, array_c* num2){
     ret->buf[count] = '\0';
     return ret;
 
+}
+
+poly* m_arbitrary(int n, int k, int t, int* iter, char* bits, int tracker){
+    poly* M = create_poly(n);
+    char* tmp = malloc(sizeof(char)*k);
+    int pos_holder = 0;
+    int bits_pos = k*iter[tracker];
+    int count = 0;
+
+
+    for(int i =0; i <= n*k; i++){
+        if(count%k == 0 && count > 0){
+            unsigned int tmp_h = (unsigned int)str_int(tmp);
+            M->coeffs[pos_holder] = tmp_h;
+            pos_holder++;
+            count = 0;
+            i--;
+            iter[tracker] += 1;
+        }else{
+            tmp[count] = bits[bits_pos];
+            count+=1;
+            bits_pos+=1;
+        }
+        
+    }
+
+    // resize_poly(M);    
+    free(tmp);
+    return M;
 }

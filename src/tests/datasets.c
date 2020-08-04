@@ -254,7 +254,6 @@ char* convert_acc_to_bits(float* arr, int size){
 poly* m_arbitrary(int n, int k, int t, int* iter, char* bits, int tracker){
     poly* M = create_poly(n);
     char* tmp = malloc(sizeof(char)*k);
-    int bits_start = iter[tracker];
     int pos_holder = 0;
     int bits_pos = k*bits_start;
     int count = 0;

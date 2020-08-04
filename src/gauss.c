@@ -2,6 +2,7 @@
 
 poly* gauss_elim(mat* matrix){
     int* variables = malloc(sizeof(int)*matrix->cols-1);
+    //print_matrix(matrix);
     int start_row = determine_left_most_col(matrix);
     check_for_defined_variables(matrix, variables);
     //print_matrix(matrix);
@@ -12,7 +13,7 @@ poly* gauss_elim(mat* matrix){
     //print_matrix(matrix);
     poly* p = translate_zeros(matrix);
     free(variables);
-    //free_matrix(matrix);
+    free_matrix(matrix);
     //print_poly(p);
     return p;
 
@@ -240,12 +241,13 @@ poly* translate_zeros (mat* matrix){
     for(int i=matrix->rows-1; i >= 0; i--){
         int* tmp_row = matrix->matrix[i];
         int S_i = tmp_row[matrix->cols-1];
-        //printf("BEFORE S_I = %d\n", tmp_row[matrix->cols]);
+        //printf("IS ROW %d A ZERO ROW? = %d\n", i, is_zero_row(matrix, i));
         
         if(is_zero_row(matrix, i) == 0 || (i == 0 && matrix->cols == 2)){
             
             for(int j = errors->size-1; j >= 0; j--){
                 //printf("LOOP S_I = %d\n", S_i);
+                //print_poly(errors);
                 if(errors->coeffs[j] == -1 && !(i == 0 && matrix->cols == 2)){
                     errors->coeffs[j] = S_i;
                     break;
@@ -258,6 +260,10 @@ poly* translate_zeros (mat* matrix){
             }
             
        }
+    }
+
+    for(int i = 0; i < errors->size; i++){
+        if(errors->coeffs[i] == -1) errors->coeffs[i] = 0;
     }
 
     return errors;

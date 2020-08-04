@@ -25,7 +25,7 @@ int* lock(int k, int t, int r, poly* p){
     int zeros = 0;
     
     for(int i = 0; i < NW; ){
-        int x = gf_pow(generator, 75+i);
+        int x = gf_pow(generator, i);
         //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,percent));
         //int card = cardinality(x);
         int num = x;
@@ -36,10 +36,10 @@ int* lock(int k, int t, int r, poly* p){
         //printf("in_range = %d\n", in_range);
         //printf("NUM = %d\n", num);
         int rand_val = abs(randombytes_random())%NW;
-        if (num != -1 && R[num] == -1 && X[num] == 0 && i < points){ //&& card >= points){
+        if (num != -1 && R[num] == -1 && X[num] == 0 ){ //&& card >= points){
             //int in_range = check_range(range, num);
             //if(in_range){
-                //printf("NUM = %d\n", num);
+                //printf("NUM = %d\t", num);
                 //printf("y = %d\n", y);
                 X[num] = 1;
                 R[num] = y;
@@ -104,8 +104,8 @@ int* create_B(int k, int t, int r, poly* p){
     int range[3] = {0,0,0};
     int zeros = 0;
 
-    for(int i = 0; i < points;  i++){
-        int x = gf_pow(generator, 75+i);
+    for(int i = 1; i < NW;){
+        int x = gf_pow(generator, i);
         //int x = gf_pow(irrs[rotation%5],sequence_of_bits(stream_count,percent));
         //int card = cardinality(x);
         int num = x;
@@ -115,13 +115,13 @@ int* create_B(int k, int t, int r, poly* p){
         int y = eval_poly(p, num);
         //printf("in_range = %d\n", in_range);
         //printf("NUM = %d\n", num);
-        int rand_val = abs(randombytes_random())%NW;
         if (num != -1 && R[num] == -1 && X[num] == 0){ //&& card >= points){
             //int in_range = check_range(range, num);
             //if(in_range){
                 X[num] = 1;
                 R[num] = y;
             //}
+             i++;
         }
         stream_count+=1;
 
@@ -193,7 +193,7 @@ int is_close(int a, int b){
     if(a > b) {max = a; min = b;}
     if(a <= b) {max = b; min = a;}
     //printf("a/b=%f\n", (float)min/(float)max);
-    if( (float)min/(float)max > .8){
+    if( (float)min/(float)max >= .8){
         return 1;
     }else{
         return 0;
@@ -210,8 +210,8 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
         int* tmp_row = malloc(sizeof(int)*2);
         tmp_row[0] = i;
         // for(int j = 0; j < points; j++){
-        if(B[i] != -1 && (is_close(R[i],B[i]) || R[i] == B[i] ) ){
-           // /*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
+        if(B[i] != -1 && (is_close(R[i],B[i]) || R[i] == B[i]) && q_size <= points){
+            ///*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
             tmp_row[1] = B[i];
             Q[q_size] = tmp_row;
             q_size+=1;
@@ -221,14 +221,13 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
     }
 
     printf("Q size = %d\n",q_size);
-    poly* C = Q_to_poly(q_size, k, t,r,Q);
+    poly* C = Q_to_poly(q_size, C2->size, t,r,Q);
     if(C==0) return 0;
     //print_poly(C);
     // printf("\n NEW C(x) = \n");
     // print_poly(C);
     //if(poly_eq(C,C2)) return C;
-    poly* new = 0; 
-    //RSDecode(t, C, 0, g);
+    poly* new = RSDecode(t, C, 0, g);
     //if(new == 0) return C;
     return new;
 }
@@ -237,8 +236,8 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
 poly* Q_to_poly(int points_2, int k, int t, int r, int** Q){
     
     mat* matrix =0;
-    if(points_2 >= NW/2){
-        matrix = create_matrix(points, points+1);
+    if(points_2 >= k){
+        matrix = create_matrix(k, k+1);
     }else{
         printf("NOT ENOUGH POINTS TO RECREATE MESSAGE.\n");
         return 0;
@@ -253,15 +252,16 @@ poly* Q_to_poly(int points_2, int k, int t, int r, int** Q){
             if(j != matrix->cols-1){
                 row[j] = gf_pow(x, j);
             }else{
-                //printf("y = %d\n", y);
+               // printf("y = %d\n", y);
                 row[j] = y;
             } 
         }
         matrix->matrix[i] = row;
     }
-
+    //print_matrix(matrix);
     poly* p = gauss_elim(matrix);
     //print_matrix(matrix);
+    //print_poly(p);
     return p;
 }
 
@@ -299,8 +299,7 @@ poly* RSDecode(int t, poly* C, poly* noise, poly* g){
     // }else{
     //     return corrected_p;
     // }
-
-    C = gf_poly_add(C, noise);
+    if(noise != 0) C = gf_poly_add(C, noise);
 
     //printf("\nPRE FIX = ");
     //print_poly(C);
@@ -316,8 +315,8 @@ poly* RSDecode(int t, poly* C, poly* noise, poly* g){
         // print_poly(s_r);
 
         poly* roots = roots_of_poly(s_r,t,NW-1);
-        // printf("roots are = ");
-        // print_poly(roots);
+        printf("roots are = ");
+        print_poly(roots);
 
         poly* errors = error_correction(roots,  S->p);
         // printf("errors are = ");

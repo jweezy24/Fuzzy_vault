@@ -260,9 +260,7 @@ poly* gf_div_poly(poly* a, poly* b, int remainder){
         }
 
         //bin(coeff);
-        //printf("Coeff = %d a=%d\t b=%d\t div_location=%d\t pos=%d \t i=%d\t b->size-1=%d\n", coeff, dividend[i], divisor[b->size-1],div_location,pos,i,a->size-1);
-        //print_arr(dividend, a->size); 
-        //print_arr(divisor, b->size); 
+        //printf("Coeff = %d a=%d\t b=%d\t div_location=%d\t pos=%d \t i=%d\t b->size-1=%d\n", coeff, dividend[i], divisor[b->size-1],div_location,pos,i,a->size-1); 
         q->coeffs[(i-b->size+1)] = coeff;
         // int tmp =0;
 
@@ -271,21 +269,22 @@ poly* gf_div_poly(poly* a, poly* b, int remainder){
             for(int j = b->size-1; j >= 0;j--){
                 if (divisor->coeffs[j] != 0){
                     //printf("a=%d  b=%d b/a=%d range=%d\n", dividend[j], divisor[j], gf_div(coeff, divisor[j]), range);
-                    //printf("product = %d\n", gf_mult(divisor[j], coeff));
+                    //printf("product = %d\n", gf_mult(divisor->coeffs[j], coeff));
                     //tmp = gf_mult(divisor->coeffs[j], coeff);
                     dividend->coeffs[i-tmp_pos] ^= gf_mult(divisor->coeffs[j], coeff);
                     //printf("x^%d + x^%d \n", i-tmp_pos, j);
                 }
                 tmp_pos++;
             }
+            //print_poly(dividend);
             //print_arr(dividend, a->size); 
         }
         pos++;
         i--;
 
     }
-    //printf("QUOTIENT IN DIV FUNC.\n");
-    //print_poly(q);
+    // printf("QUOTIENT IN DIV FUNC.\n");
+    // print_poly(q);
     resize_poly(q);
     resize_poly(dividend);
 
@@ -394,6 +393,9 @@ int eval_poly(poly* p, int x){
 
 int gf_pow(unsigned int a, int b){
     unsigned int ret = 1;
+    if(a == 0 && b == 0){
+        return 1;
+    }
     if(a == 0){
         return 0;
     }
@@ -436,8 +438,9 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
     poly* s = gf_div_poly(C, g,1);
     poly* S = create_poly(2*t);
     synd* sy = malloc(sizeof(synd));
-    // printf("s = ");
-    // print_poly(s);
+    
+    //printf("C = ");
+    //print_poly(C);
     int iter = 1;
     sy->p = S;
     sy->synds = 0;
@@ -460,6 +463,7 @@ synd* syndome_calculator_division(poly* C, poly* g, int t){
     //printf("amount of syndromes = %d\n", sy->synds);
 
     resize_poly(S);
+    free_poly(s);
 
     return sy;
 

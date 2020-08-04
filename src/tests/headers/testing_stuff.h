@@ -19,7 +19,7 @@ void log_st(array_c* stream_num);
 array_c* int_to_str(int num);
 array_c* make_fraction(array_c* num1, array_c* num2);
 void log_final_line(array_c* frac, int percent, char* file_path);
-void log_final_line_noise(array_c* frac, int percent, int noise_size, char* file_path);
+void log_final_line_noise(array_c* frac, int percent, int noise, double noise_size, char* file_path, int message_size, int key);
 
 //dataset conversions utils
 char* convert_acc_to_bits(float* arr, int size);

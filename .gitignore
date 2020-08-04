@@ -342,3 +342,6 @@ EJSCREEN_2019_USPR.csv
 datasets/
 src/tests/data/
 src_onion/
+src/analysis/vk1.c
+src/analysis/vk2.c
+src/analysis/together.mat
