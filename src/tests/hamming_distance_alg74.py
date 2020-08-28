@@ -9,12 +9,12 @@ def get_binary_string_list(total):
 
     with open(file_path, 'r') as f:
         for line in f:
-            if len(string) == 4:
+            if len(string) == 8:
                 strs.append(string)
                 string = ''
                 count = 0
                 amount -= 1
-            if len(string) > 4:
+            if len(string) > 8:
                 string = ''
                 count = 0
             else:
@@ -61,6 +61,38 @@ def create_H():
     H.append(r6)
     H.append(r7)
     return H
+
+def all_possible_hammings_codes(g,h):
+    codes = []
+    for i in range(0,16):
+        bin = format(i,'04b')
+        code = mat_mult_encoding(bin, g)
+        count = 0
+        for j in codes:
+            if j == code:
+                break
+            else:
+                count+=1
+        if count >= len(codes):
+            codes.append(code)
+            count = 0
+        print(codes)
+    return codes
+
+def map_code_to_given_stream(stream, codes):
+    num = int(stream, 2)
+    min = 255
+    pos = 0
+    for i in codes:
+        tmp = num ^ int(i, 2)
+        if tmp < min:
+            min = tmp
+            pos = i
+    
+    return pos
+
+    
+
 
 #AxB
 def mat_mult_encoding(a,b):
@@ -122,14 +154,13 @@ def main():
     binarys = get_binary_string_list(total)
     G = create_G()
     H = create_H()
+    codes = all_possible_hammings_codes(G,H)
     for per in range(0,101):
         bad = 0
         for binary in binarys:
             orig = binary
-            print(orig)
-            code = hammingE(orig, G)
             new_code = ''
-            for i in code:
+            for i in orig:
                 chance = int(random.random()*100)%100
                 val = i
                 if chance < per:
@@ -138,14 +169,14 @@ def main():
                     else:
                         val = '0';
                 new_code += val
-
-            check = hammingD(new_code, H)
             
-            if check != '000':
-                new_code = correct(new_code, check, H)
-            
-            if new_code[3:] != orig:   
+            recd = map_code_to_given_stream(new_code, codes)
+            orig_c = map_code_to_given_stream(orig, codes)
+            #print(recd)
+            #print(orig_c)
+            if recd != orig_c: 
                 bad+=1
+
         with open("./src/tests/data/results_noise_hamming.txt", 'a') as f:
             f.write(f"Ratio {bad}/{total}\t Percent {per}\n")
 

@@ -680,7 +680,7 @@ void display_message(poly* M){
 int bin_num(unsigned n) { 
     unsigned i;
     int count = 0; 
-    for (i = 1 << 16; i > 0; i = i / 2) 
+    for (i = 1 << 9; i > 0; i = i / 2) 
         (n & i)? count+=1: 0;
     return count;
    //printf("\n"); 

@@ -31,8 +31,17 @@ clean:
 kill_all:
 	kill -9 $(ps -aux | grep datasets | awk '{print $2}') 
 
+hamming74:
+	python3 ./src/tests/hamming_distance_alg74.py
+
+hamming31:
+	python3 ./src/tests/hamming_distance_alg32.py
+
 hamming:
-	python3 ./src/tests/hamming_distance_alg.py
+	python3 ./src/tests/general_hamming.py
 
 comparisons:
 	python3 ./src/analysis/comparisons.py
+
+OAP:
+	python3 ./src/analysis/message_size_parser.py

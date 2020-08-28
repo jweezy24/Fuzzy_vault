@@ -9,45 +9,56 @@ int main(){
     int t = ((n-k)/2);
     int r = 128;
     int m_sizes[7] = {15, 30, 45, 100, 128, 150, 200};
-    char* file_path = "./src/tests/data/results_noise_OAP.txt";
+    char* file_path = "./src/tests/data/results_noise_new.txt";
     poly** g_s = malloc(sizeof(poly*)*8);
     poly** noise_good = malloc(sizeof(poly*)*8);
     poly** noise_bad = malloc(sizeof(poly*)*8);
     double time_spent;
     extern char vk1[];
     extern char vk2[];
+    int total = 0;
 
 
-    for(int n_size = 1; n_size < 9; n_size++){
-        for(int M_Size = 0; M_Size < 7; M_Size++){
+    for(int n_size = 8; n_size < 9; n_size++){
+        for(int M_Size = 5; M_Size < 7; M_Size++){
             n = m_sizes[M_Size];
             k = 8;
             t = ((n-k)/2);
-            //for(int per = 0; per <= 100; per++){
-
+            for(int per = 0; per <= 100; per++){
+                int percent_error = 0;
                 clock_t begin = clock();
 
                 poly* n_1;
                 poly* n_2;
                 
                 poly* g_x = g(t);
-                //percent = per;
+                percent = per;
                 int noise_size = n_size;
                 int count_c = 0;
                 //int streams = (int)(29478361/(n*noise_size));
-                int len = 554240;
-                int streams = (int)(len/(n*noise_size));
+                int len = 2000;
+                //fuzzy
+                int streams = (int)(len/(k*n_size));
+                //ours
+                //int streams = (int)(len/(n*noise_size));
                 stream_count_layers[0] = 0;
                 stream_count_layers[1] = 0;
-
-                for(int i = 0; i< streams; i++){
-
+                for(int i = 0; i < len; i++){
+                    //printf("BEFORE i = %d actual = %d n_size = %d\n", i, stream_count_layers[0], n_size);
+                    total = i;
                     poly* g_x = g(t);
-                    poly* n_1 = m_arbitrary(n, noise_size, t, stream_count_layers, vk1, 0);
-                    poly* n_2 = m_arbitrary(n, noise_size, t, stream_count_layers, vk2, 1);
+                    //Fuzzy
+                    //poly* n_1 = m_(k, noise_size, t, stream_count_layers[0], vk1, 0);
+                    //poly* n_2 = m_(k, noise_size, t, stream_count_layers[1], vk2, 1);
+                    //printf("AFTER i = %d actual = %d n_size = %d\n", i, stream_count_layers[0], n_size);
+                    //OURS
+                    poly* n_1 = m_(n, noise_size+1, t, stream_count_layers[0],  0);
+                    poly* n_2 = m_(n, noise_size+1, t, stream_count_layers[1],  1);
                     resize_poly(n_1);
                     resize_poly(n_2);            
                     poly* M = m_random_message(k);
+
+                    //print_poly(n_1);
 
                     int errors = 0;
 
@@ -58,26 +69,33 @@ int main(){
                     poly* C2 = gf_mult_poly(M, g_x);
 
                     points = n;
-                    
-                    // for(int l = 0; l < n_2->size; l++){
-                    //     //5% chance of error
-                    //     //printf("%d\n", rand());
-                    //     //for(int j = 0; j < noise_size; j++){
-                    //     int tmp_num = abs(randombytes_random())%100;
-                    //     //printf("Random = %d\n", tmp_num);
-                    //     if( tmp_num >= 100-percent){
-                    //         unsigned int val = abs(randombytes_random())%256;
-                    //         //bin(val);
-                    //         //printf("\n");
-                    //         n_2->coeffs[l] = (unsigned int)n_2->coeffs[l] ^ val;
-                    //         //printf("ERROR PUT IN LAYER %d ERROR AT %d WITH VAL %u\n", layer, l, val); 
-                    //         errors+=1;
-                    //         //printf("Errors = %d\n", errors);
+                    int coeffs = 0;
+                    float ratio = 0.0;
+                    for(int l = 0; l < n_2->size; l++){
+                        //5% chance of error
+                        //printf("%d\n", rand());
+                        //for(int j = 0; j < noise_size; j++){
+                        int tmp_num = abs(randombytes_random())%100;
+                        //printf("Random = %d\n", tmp_num);
+                        ratio = (((float)errors)/(float)(n*n_size))*100.00;
+                        if( tmp_num >= 100-percent && ratio <= percent){
+                            unsigned int val = abs(randombytes_random())%256;
+                            //bin(val);
+                            //printf("ERROR SHIT = %f\n", ratio);
+                            if(percent >= ((float)(bin_num(val)+errors)/(float)(n*n_size))*100.00){
+                                n_2->coeffs[l] = (unsigned int)n_2->coeffs[l] ^ 0xff;
+                                //printf("ERROR AT %d WITH VAL %u\n", l, val);
+                                coeffs += 1; 
+                                errors+= bin_num(0xff);
+                                //printf("Errors = %d\n", errors);
+                            }
                             
-                    //     }
-                    //     //}
-                    // }
-
+                        }
+                        //}
+                    }
+                    percent_error += ratio;
+                    printf("Errors = %d\t Coeffs = %d\t Size = %d \t bits used = %d\n", percent_error, coeffs, n, stream_count_layers[0]);
+                    //exit(0);
                     //FUZZY VAULT
                     //poly* C = gf_mult_poly(g_x, n_2);
                     
@@ -91,11 +109,10 @@ int main(){
 
 
 
-                    //int* R = lock(k,t,r,C);
-
                     //printf("THERE ARE %d BIT ERRORS\n", errors);
                     
                     //FUZZY VAULT DECODING
+                    //int* R = lock(k,t,r,C);
                     //poly* res =  unlock(R, g_x, C2, k, t, r);
 
                     //ALGORITHM DECODING
@@ -116,8 +133,10 @@ int main(){
                     // print_poly(res);
                     // printf("\nC2 = ");
                     // print_poly(C2);
-
+                    //OURS
                     int correct = poly_eq(M, res);
+                    //FUZZY
+                    //int correct = poly_eq(n_2, res);
                         if(correct) {
                             printf("***************CORRECT****************\n");
                             // printf("C = ");
@@ -169,10 +188,10 @@ int main(){
 
                 //log_st("");
 
-                array_c* number2 = int_to_str(streams);
+                array_c* number2 = int_to_str(total);
                 array_c* number = int_to_str(count_c);
                 array_c* frac = make_fraction(number, number2);
-                log_final_line_noise(frac, percent, n_size, time_spent, file_path, n, n_size);
+                log_final_line_noise(frac, (int)(percent_error/total), n_size, time_spent, file_path, n, n_size);
                 free(number->buf);
                 free(number2->buf);
                 free(frac->buf);
@@ -183,7 +202,7 @@ int main(){
                 free(frac);
                 
 
-            //}
+            }
         }
     }
     

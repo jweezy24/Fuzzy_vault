@@ -19,9 +19,7 @@ int* lock(int k, int t, int r, poly* p){
     int raised = 1;
     
     //printf("Stream_count Start1 = %d\n", stream_count_layers[1]);
-    stream_count_layers[1] = stream_count_layers[0];
     int range[3] = {0,0,0};
-    int stream_count = stream_count_layers[0];
     int zeros = 0;
     
     for(int i = 0; i < NW; ){
@@ -52,23 +50,12 @@ int* lock(int k, int t, int r, poly* p){
         }
         // raised +=1;
         // rotation+=1;
-        stream_count+=1;
+        //stream_count+=1;
     }
-    stream_count_layers[0] = stream_count;
+    // stream_count_layers[0] = stream_count;
     //printf("Stream_count END1 = %d\n", stream_count_layers[0]);
 
-    int len = points;
-    int check = 1;
-
-    time_t dd;
-    srand((unsigned) time(&dd));
-
-    // for(int i = 0; i < NW;i++){
-    //     if(R[i] == -1){
-    //         int val = rand()%NW;
-    //         R[i] = val;
-    //     }
-    // }
+    free(X);
     return R;
 
 }
@@ -97,7 +84,6 @@ int* create_B(int k, int t, int r, poly* p){
     int rotation = 0;
     int raised = 1;
     
-    int stream_count = stream_count_layers[1];
 
     //printf("Stream_count Start2 = %d\n", points);
 
@@ -123,13 +109,13 @@ int* create_B(int k, int t, int r, poly* p){
             //}
              i++;
         }
-        stream_count+=1;
 
     }
 
-    stream_count_layers[1] = stream_count;
+    //stream_count_layers[1] = stream_count;
     //printf("Stream_count END2 = %d\n", stream_count_layers[1]);
     //printf("Range = %d\t %d\t %d\n", range[0], range[1], range[2]);
+    free(X);
 
     return R;
 
