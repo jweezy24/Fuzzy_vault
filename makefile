@@ -1,3 +1,8 @@
+
+kyuin:
+	gcc -ofuzzyvault src/main.c
+
+
 galois:
 	cd src && gcc galois.c -Wall -g3 -lm -o galois.o ../simulated_input.o
 

@@ -4,7 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
-#include <sodium.h>
+//#include <sodium.h>
 
 
 typedef struct polynomial{
@@ -19,7 +19,7 @@ typedef struct syndrome{
 
 
 int pow_2 = 8;
-int p = pow(2, 8);
+int p = (1<<8); // 256, size of Galois field
 unsigned int NW = 1 << 8;
 unsigned int *gflog, *gfilog;
 int points =0;
@@ -28,7 +28,7 @@ int stream_count_layers[2] = {0,0};
 int stream_count = 0;
 int percent = 0;
 int alphas[8] = {0b10011101, 0b11100101, 0b11110111,  0b11010101, 0b11001011, 0b10111111,  0b10001111, 0b10001001};
-int start_size = 30;
+int start_size = 120;
 int start_message = 9;
 
 //4 Bit

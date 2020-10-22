@@ -33,7 +33,8 @@ int* lock(int k, int t, int r, poly* p){
         int y = eval_poly(p, num);
         //printf("in_range = %d\n", in_range);
         //printf("NUM = %d\n", num);
-        int rand_val = abs(randombytes_random())%NW;
+        //int rand_val = abs(randombytes_random())%NW;
+        unsigned int rand_val = rand()%256;
         if (num != -1 && R[num] == -1 && X[num] == 0 ){ //&& card >= points){
             //int in_range = check_range(range, num);
             //if(in_range){
@@ -44,7 +45,8 @@ int* lock(int k, int t, int r, poly* p){
                 i++;
             //}
         }else if( i >= r && X[rand_val] == 0){
-            R[rand_val] = abs(randombytes_random())%NW;
+            //R[rand_val] = abs(randombytes_random())%NW;
+            R[rand_val] = abs(rand())%NW;
             X[rand_val] = 1;
             i++;
         }
@@ -178,7 +180,7 @@ int is_close(int a, int b){
     }
     if(a > b) {max = a; min = b;}
     if(a <= b) {max = b; min = a;}
-    //printf("a/b=%f\n", (float)min/(float)max);
+//    printf("a/b=%f\n", (float)min/(float)max);
     if( (float)min/(float)max >= .8){
         return 1;
     }else{
@@ -196,8 +198,10 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
         int* tmp_row = malloc(sizeof(int)*2);
         tmp_row[0] = i;
         // for(int j = 0; j < points; j++){
-        if(B[i] != -1 && (is_close(R[i],B[i]) || R[i] == B[i]) && q_size <= points){
-            ///*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
+//            /*if(B[i] != R[i])*/ printf("B[i] = %d \t R[i] = %d at i = %d \n", B[i], R[i], i);
+//        printf("is_close() = %d\n", is_close(R[i],B[i]));
+        if(/*B[i] != -1 &&*/ (is_close(R[i],B[i]) || R[i] == B[i]) && q_size <= r){
+//        if(B[i] == R[i]){
             tmp_row[1] = B[i];
             Q[q_size] = tmp_row;
             q_size+=1;
@@ -206,7 +210,7 @@ poly* unlock(int* R, poly* g, poly* C2, int k, int t, int r){
         //} 
     }
 
-    printf("Q size = %d\n",q_size);
+//    printf("Q size = %d\n",q_size);
     poly* C = Q_to_poly(q_size, C2->size, t,r,Q);
     if(C==0) return 0;
     //print_poly(C);
@@ -373,7 +377,9 @@ int cardinality(int x){
 poly* m_random_message(int size){
     poly* ret = create_poly(size);
     for(int i = 0; i < size; i++){
-        ret->coeffs[i] = abs(randombytes_random())%p;
+//        ret->coeffs[i] = abs(randombytes_random())%p;
+        ret->coeffs[i] = abs(rand())%p;
+
     }
     return ret;
 }

@@ -1,7 +1,7 @@
 #include "./headers/galois.h"
 
 
-extern char bits[];
+extern char *bits = NULL;
 
 
 
