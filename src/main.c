@@ -41,7 +41,7 @@ char vk2[] = {'0','0','0','0','0','0','0','0','0','0','1','1','0','0','1','1','0
 int main(int argc, char **argv) {
     setup_tables();
     int n = 30;
-    int k = 9;
+    int k = 16;
     //int t = ((n-k)/2);
     int t = ((n-k)/2);
     int r = 128;
